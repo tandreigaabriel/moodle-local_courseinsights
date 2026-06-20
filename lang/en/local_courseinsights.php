@@ -89,3 +89,6 @@ $string['teachers'] = 'Teachers';
 
 
 $string['usecache'] = 'Use summary cache where possible';
+$string['examkeywords_default'] = 'exam,final';
+$string['miniexamkeywords_default'] = 'mini,mini exam';
+$string['studentroleids_default'] = '5,11,25';

@@ -146,8 +146,8 @@ class report_service {
         return [
             'courseid'      => optional_param('courseid', 0, PARAM_INT),
             'categoryid'    => optional_param('categoryid', 0, PARAM_INT),
-            'startdate'     => optional_param('startdate', '', PARAM_RAW_TRIMMED),
-            'enddate'       => optional_param('enddate', '', PARAM_RAW_TRIMMED),
+            'startdate'     => optional_param('startdate', '', PARAM_TEXT),
+            'enddate'       => optional_param('enddate', '', PARAM_TEXT),
             'activitytype'  => optional_param('activitytype', 'all', PARAM_ALPHA),
             'studentstatus' => optional_param('studentstatus', 'active', PARAM_ALPHA),
             'usecache'      => optional_param('usecache', 0, PARAM_BOOL),

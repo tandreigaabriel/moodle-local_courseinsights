@@ -41,7 +41,7 @@ if ($hassiteconfig) {
         'local_courseinsights/miniexamkeywords',
         get_string('miniexamkeywords', 'local_courseinsights'),
         get_string('miniexamkeywords_desc', 'local_courseinsights'),
-        'mini,mini exam',
+        get_string('miniexamkeywords_default', 'local_courseinsights'),
         PARAM_TEXT
     ));
 
@@ -49,7 +49,7 @@ if ($hassiteconfig) {
         'local_courseinsights/examkeywords',
         get_string('examkeywords', 'local_courseinsights'),
         get_string('examkeywords_desc', 'local_courseinsights'),
-        'exam,final',
+        get_string('examkeywords_default', 'local_courseinsights'),
         PARAM_TEXT
     ));
 
@@ -57,7 +57,7 @@ if ($hassiteconfig) {
         'local_courseinsights/studentroleids',
         get_string('studentroleids', 'local_courseinsights'),
         get_string('studentroleids_desc', 'local_courseinsights'),
-        '5,11,25',
+        get_string('studentroleids_default', 'local_courseinsights'),
         PARAM_TEXT
     ));
 
