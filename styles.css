@@ -1,0 +1,78 @@
+/**
+ * Styles for local_courseinsights.
+ *
+ * @package    local_courseinsights
+ * @copyright  2026 Andrei Toma
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+.local-courseinsights-dashboard .local-courseinsights-export {
+    margin-bottom: 1rem;
+}
+
+.local-courseinsights-dashboard .local-courseinsights-chart {
+    margin-bottom: 1.5rem;
+}
+
+.local-courseinsights-dashboard .local-courseinsights-chart-note {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+.local-courseinsights-dashboard .local-courseinsights-empty {
+    padding: 2rem 0;
+    color: #6c757d;
+}
+
+.local-courseinsights-dashboard .local-courseinsights-table {
+    overflow-x: auto;
+}
+
+.local-courseinsights-dashboard thead th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.local-courseinsights-dashboard thead th:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.local-courseinsights-sort-icon {
+    display: inline-block;
+    margin-left: 0.25rem;
+    font-size: 0.75em;
+}
+
+.local-courseinsights-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.local-courseinsights-stat-card {
+    flex: 1 1 130px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    text-align: center;
+    min-width: 110px;
+}
+
+.local-courseinsights-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #343a40;
+}
+
+.local-courseinsights-stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}

@@ -1,0 +1,191 @@
+{{!
+    Course Insights dashboard — chart, table, pagination, and empty state.
+
+    @template local_courseinsights/dashboard
+
+    Context variables required for this template:
+    * hasexport {bool} Whether to show the CSV export button.
+    * exporturl {string} URL for the CSV export (unescaped).
+    * exportlabel {string} Label for the export button.
+    * haschart {bool} Whether to render the chart section.
+    * chart {string} Rendered Moodle chart HTML (unescaped).
+    * charttruncated {bool} Whether the chart shows a subset of courses.
+    * charttruncatenote {string} Note explaining the chart truncation.
+    * hasrecords {bool} Whether the query returned any rows.
+    * emptystate {string} Message shown when there are no rows.
+    * headers {array} Table column headers; each has label, sortkey, sortasc, sortdesc.
+    * rows {array} Table rows; each has a `cells` array of objects with `value` and `isheader`.
+    * totalcourses {number} Total course count across all pages.
+    * statenrolled {number} Total enrolled students on this page.
+    * statsubmissions {number} Total assignment submissions on this page.
+    * statattempts {number} Total quiz/exam attempts on this page.
+    * showstatsubmissions {bool} Whether to show the submissions stat card.
+    * showstatattempts {bool} Whether to show the attempts stat card.
+    * label_statcourses {string} Label for the courses stat card.
+    * label_statenrolled {string} Label for the students stat card.
+    * label_statsubmissions {string} Label for the submissions stat card.
+    * label_statattempts {string} Label for the attempts stat card.
+    * haspagination {bool} Whether to show pagination controls.
+    * pagination_info {string} "Showing X to Y of Z courses" text.
+    * hasprev {bool} Whether there is a previous page.
+    * hasnext {bool} Whether there is a next page.
+    * prevpage {number} 0-based index of the previous page.
+    * nextpage {number} 0-based index of the next page.
+    * pages {array} Page items: num, label, active, isellipsis.
+
+    Example context (json):
+    {
+        "hasexport": true,
+        "exporturl": "/local/courseinsights/export.php",
+        "exportlabel": "Export CSV",
+        "haschart": true,
+        "chart": "<div>...</div>",
+        "charttruncated": true,
+        "charttruncatenote": "Chart shows the first 20 courses.",
+        "hasrecords": true,
+        "emptystate": "No courses found.",
+        "totalcourses": 247,
+        "statenrolled": 120,
+        "statsubmissions": 48,
+        "statattempts": 30,
+        "showstatsubmissions": true,
+        "showstatattempts": true,
+        "label_statcourses": "Courses",
+        "label_statenrolled": "Students",
+        "label_statsubmissions": "Submissions",
+        "label_statattempts": "Attempts",
+        "headers": [{"label": "Course", "sortkey": "course", "sortasc": true, "sortdesc": false}],
+        "rows": [
+            {
+                "cells": [
+                    {"value": "Course A", "isheader": true},
+                    {"value": "12", "isheader": false}
+                ]
+            }
+        ],
+        "haspagination": true,
+        "pagination_info": "Showing 1 to 50 of 247 courses",
+        "hasprev": false,
+        "hasnext": true,
+        "prevpage": 0,
+        "nextpage": 1,
+        "pages": [
+            {"num": 0, "label": "1", "active": true, "isellipsis": false},
+            {"num": 1, "label": "2", "active": false, "isellipsis": false}
+        ]
+    }
+}}
+<div class="local-courseinsights-dashboard">
+
+    {{#hasexport}}
+    <div class="local-courseinsights-export">
+        <a href="{{{exporturl}}}" class="btn btn-secondary">{{exportlabel}}</a>
+    </div>
+    {{/hasexport}}
+
+    {{#hasrecords}}
+    <div class="local-courseinsights-stats">
+        <div class="local-courseinsights-stat-card">
+            <div class="local-courseinsights-stat-value">{{totalcourses}}</div>
+            <div class="local-courseinsights-stat-label">{{label_statcourses}}</div>
+        </div>
+        <div class="local-courseinsights-stat-card">
+            <div class="local-courseinsights-stat-value">{{statenrolled}}</div>
+            <div class="local-courseinsights-stat-label">{{label_statenrolled}}</div>
+        </div>
+        {{#showstatsubmissions}}
+        <div class="local-courseinsights-stat-card">
+            <div class="local-courseinsights-stat-value">{{statsubmissions}}</div>
+            <div class="local-courseinsights-stat-label">{{label_statsubmissions}}</div>
+        </div>
+        {{/showstatsubmissions}}
+        {{#showstatattempts}}
+        <div class="local-courseinsights-stat-card">
+            <div class="local-courseinsights-stat-value">{{statattempts}}</div>
+            <div class="local-courseinsights-stat-label">{{label_statattempts}}</div>
+        </div>
+        {{/showstatattempts}}
+    </div>
+    {{/hasrecords}}
+
+    {{#haschart}}
+    <div class="local-courseinsights-chart">
+        {{{chart}}}
+        {{#charttruncated}}
+        <p class="local-courseinsights-chart-note">{{charttruncatenote}}</p>
+        {{/charttruncated}}
+    </div>
+    {{/haschart}}
+
+    {{#hasrecords}}
+    <div class="local-courseinsights-table">
+        <table class="generaltable table table-striped table-hover">
+            <thead>
+                <tr>
+                    {{#headers}}
+                    <th scope="col" data-ci-sortby="{{sortkey}}" tabindex="0">
+                        {{label}}<span class="local-courseinsights-sort-icon">{{#sortasc}}▲{{/sortasc}}{{#sortdesc}}▼{{/sortdesc}}</span>
+                    </th>
+                    {{/headers}}
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    {{#cells}}
+                    {{#isheader}}<th scope="row">{{value}}</th>{{/isheader}}
+                    {{^isheader}}<td>{{value}}</td>{{/isheader}}
+                    {{/cells}}
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+
+    {{#haspagination}}
+    <nav class="local-courseinsights-pagination mt-3" aria-label="Page navigation">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <small class="text-muted">{{pagination_info}}</small>
+            <ul class="pagination pagination-sm mb-0">
+                {{#hasprev}}
+                <li class="page-item">
+                    <button type="button" class="page-link" data-ci-page="{{prevpage}}" aria-label="Previous">&laquo;</button>
+                </li>
+                {{/hasprev}}
+                {{^hasprev}}
+                <li class="page-item disabled" aria-hidden="true"><span class="page-link">&laquo;</span></li>
+                {{/hasprev}}
+                {{#pages}}
+                {{#isellipsis}}
+                <li class="page-item disabled" aria-hidden="true"><span class="page-link">{{label}}</span></li>
+                {{/isellipsis}}
+                {{^isellipsis}}
+                {{#active}}
+                <li class="page-item active" aria-current="page"><span class="page-link">{{label}}</span></li>
+                {{/active}}
+                {{^active}}
+                <li class="page-item"><button type="button" class="page-link" data-ci-page="{{num}}">{{label}}</button></li>
+                {{/active}}
+                {{/isellipsis}}
+                {{/pages}}
+                {{#hasnext}}
+                <li class="page-item">
+                    <button type="button" class="page-link" data-ci-page="{{nextpage}}" aria-label="Next">&raquo;</button>
+                </li>
+                {{/hasnext}}
+                {{^hasnext}}
+                <li class="page-item disabled" aria-hidden="true"><span class="page-link">&raquo;</span></li>
+                {{/hasnext}}
+            </ul>
+        </div>
+    </nav>
+    {{/haspagination}}
+    {{/hasrecords}}
+
+    {{^hasrecords}}
+    <div class="local-courseinsights-empty">
+        <p>{{emptystate}}</p>
+    </div>
+    {{/hasrecords}}
+
+</div>
