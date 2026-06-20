@@ -30,7 +30,7 @@
  * @return void
  */
 function local_courseinsights_extend_navigation(global_navigation $nav): void {
-    if (has_capability('local/courseinsights:view', \core\context\system::instance())) {
+    if (!is_siteadmin() && has_capability('local/courseinsights:view', \core\context\system::instance())) {
         $node = navigation_node::create(
             get_string('pluginname', 'local_courseinsights'),
             new moodle_url('/local/courseinsights/index.php'),
@@ -61,8 +61,8 @@ function local_courseinsights_output_fragment_dashboard(array $args): string {
     $filters = [
         'courseid'      => (int) ($args['courseid'] ?? 0),
         'categoryid'    => (int) ($args['categoryid'] ?? 0),
-        'startdate'     => clean_param($args['startdate'] ?? '', PARAM_RAW_TRIMMED),
-        'enddate'       => clean_param($args['enddate'] ?? '', PARAM_RAW_TRIMMED),
+        'startdate'     => clean_param($args['startdate'] ?? '', PARAM_TEXT),
+        'enddate'       => clean_param($args['enddate'] ?? '', PARAM_TEXT),
         'activitytype'  => clean_param($args['activitytype'] ?? 'all', PARAM_ALPHA),
         'studentstatus' => clean_param($args['studentstatus'] ?? 'active', PARAM_ALPHA),
         'usecache'      => (bool) ($args['usecache'] ?? false),
@@ -131,10 +131,14 @@ function local_courseinsights_output_fragment_dashboard(array $args): string {
         'headers'           => $headers,
         'rows'              => $rows,
         'totalcourses'          => $totalcount,
-        'label_statcourses'     => get_string('stat_courses', 'local_courseinsights'),
-        'label_statenrolled'    => get_string('stat_students', 'local_courseinsights'),
+        'label_statcourses'    => get_string('stat_courses', 'local_courseinsights'),
+        'label_statenrolled'   => get_string('stat_students', 'local_courseinsights'),
         'label_statsubmissions' => get_string('stat_submissions', 'local_courseinsights'),
-        'label_statattempts'    => get_string('stat_attempts', 'local_courseinsights'),
+        'label_statattempts'   => get_string('stat_attempts', 'local_courseinsights'),
+        'hascoursecards'       => !empty($records),
+        'courseinsightslabel'  => get_string('pluginname', 'local_courseinsights'),
+        'completionratelabel'  => get_string('completionrate', 'local_courseinsights'),
+        'coursecards'          => \local_courseinsights\report_service::build_course_cards($records, $filters['activitytype']),
     ], $stats, $pagination);
 
     return $OUTPUT->render_from_template('local_courseinsights/dashboard', $templatecontext);

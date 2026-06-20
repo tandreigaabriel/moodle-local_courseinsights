@@ -55,11 +55,11 @@ class filter_form extends \moodleform {
         $mform->setDefault('courseid', 0);
 
         $mform->addElement('text', 'startdate', get_string('startdate', 'local_courseinsights'));
-        $mform->setType('startdate', PARAM_RAW_TRIMMED);
+        $mform->setType('startdate', PARAM_TEXT);
         $mform->addHelpButton('startdate', 'dateformathelp', 'local_courseinsights');
 
         $mform->addElement('text', 'enddate', get_string('enddate', 'local_courseinsights'));
-        $mform->setType('enddate', PARAM_RAW_TRIMMED);
+        $mform->setType('enddate', PARAM_TEXT);
         $mform->addHelpButton('enddate', 'dateformathelp', 'local_courseinsights');
 
         $presetbuttons =

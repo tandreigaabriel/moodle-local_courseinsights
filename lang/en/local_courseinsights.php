@@ -22,6 +22,17 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['active'] = 'Active';
+$string['activityoverview'] = 'Activity Overview';
+$string['backtodashboard'] = 'Back to dashboard';
+$string['contentbreakdown'] = 'Content Breakdown';
+$string['coursedetail'] = 'Course Detail';
+$string['dashboardoverview'] = 'Dashboard Overview';
+$string['detailedreport'] = 'Detailed Report';
+$string['forumactivities'] = 'Forum Activities';
+$string['lastactivitylabel'] = 'Last activity';
+$string['totalassignments'] = 'Total Assignments';
+$string['totalquizzes'] = 'Total Quizzes';
 $string['activitytype'] = 'Activity type';
 $string['activitytype_all'] = 'All activity types';
 $string['activitytype_assign'] = 'Assignments';
@@ -59,6 +70,7 @@ $string['examkeywords_desc'] = 'Comma-separated words used to identify exams fro
 $string['exams'] = 'Exams';
 $string['exportcsv'] = 'Export CSV';
 $string['filter'] = 'Filter';
+$string['inactive'] = 'Inactive';
 $string['filters'] = 'Filters';
 $string['lastactivity'] = 'Last student activity';
 $string['miniexamkeywords'] = 'Mini exam keywords';

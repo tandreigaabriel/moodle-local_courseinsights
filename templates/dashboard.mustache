@@ -19,7 +19,7 @@
     @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
 }}
 {{!
-    Course Insights dashboard — chart, table, pagination, and empty state.
+    Course Insights dashboard — stat cards, chart, course insight cards, and pagination.
 
     @template local_courseinsights/dashboard
 
@@ -33,18 +33,23 @@
     * charttruncatenote {string} Note explaining the chart truncation.
     * hasrecords {bool} Whether the query returned any rows.
     * emptystate {string} Message shown when there are no rows.
-    * headers {array} Table column headers; each has label, sortkey, sortasc, sortdesc.
-    * rows {array} Table rows; each has a `cells` array of objects with `value` and `isheader`.
     * totalcourses {number} Total course count across all pages.
-    * statenrolled {number} Total enrolled students on this page.
-    * statsubmissions {number} Total assignment submissions on this page.
-    * statattempts {number} Total quiz/exam attempts on this page.
+    * statenrolled {number} Total enrolled students.
+    * statsubmissions {number} Total assignment submissions.
+    * statattempts {number} Total quiz/exam attempts.
     * showstatsubmissions {bool} Whether to show the submissions stat card.
     * showstatattempts {bool} Whether to show the attempts stat card.
     * label_statcourses {string} Label for the courses stat card.
     * label_statenrolled {string} Label for the students stat card.
     * label_statsubmissions {string} Label for the submissions stat card.
     * label_statattempts {string} Label for the attempts stat card.
+    * hascoursecards {bool} Whether to show course insight cards.
+    * courseinsightslabel {string} Section heading above the course cards.
+    * completionratelabel {string} Label for the completion rate progress bar.
+    * coursecards {array} Course insight cards; each item has:
+    *     coursename {string}, isactive {bool}, statuslabel {string},
+    *     completionratedisplay {string}, completionratewidth {string},
+    *     meta {array} — four items each with label and value strings.
     * haspagination {bool} Whether to show pagination controls.
     * pagination_info {string} "Showing X to Y of Z courses" text.
     * hasprev {bool} Whether there is a previous page.
@@ -60,107 +65,131 @@
         "exportlabel": "Export CSV",
         "haschart": true,
         "chart": "<div>...</div>",
-        "charttruncated": true,
+        "charttruncated": false,
         "charttruncatenote": "Chart shows the first 20 courses.",
         "hasrecords": true,
         "emptystate": "No courses found.",
-        "totalcourses": 247,
-        "statenrolled": 120,
-        "statsubmissions": 48,
-        "statattempts": 30,
+        "totalcourses": 1,
+        "statenrolled": 101,
+        "statsubmissions": 1,
+        "statattempts": 0,
         "showstatsubmissions": true,
         "showstatattempts": true,
         "label_statcourses": "Courses",
         "label_statenrolled": "Students",
         "label_statsubmissions": "Submissions",
         "label_statattempts": "Attempts",
-        "headers": [{"label": "Course", "sortkey": "course", "sortasc": true, "sortdesc": false}],
-        "rows": [
+        "hascoursecards": true,
+        "courseinsightslabel": "Course Insights",
+        "completionratelabel": "Completion rate %",
+        "coursecards": [
             {
-                "cells": [
-                    {"value": "Course A", "isheader": true},
-                    {"value": "12", "isheader": false}
+                "coursename": "Web Development",
+                "isactive": true,
+                "statuslabel": "Active",
+                "completionratedisplay": "0%",
+                "completionratewidth": "0%",
+                "meta": [
+                    {"label": "Enrolled students", "value": "101"},
+                    {"label": "Teachers", "value": "Admin User"},
+                    {"label": "Assignments", "value": "11"},
+                    {"label": "Last student activity", "value": "20 June 2026"}
                 ]
             }
         ],
-        "haspagination": true,
-        "pagination_info": "Showing 1 to 50 of 247 courses",
+        "haspagination": false,
+        "pagination_info": "Showing 1 to 1 of 1 courses",
         "hasprev": false,
-        "hasnext": true,
+        "hasnext": false,
         "prevpage": 0,
-        "nextpage": 1,
-        "pages": [
-            {"num": 0, "label": "1", "active": true, "isellipsis": false},
-            {"num": 1, "label": "2", "active": false, "isellipsis": false}
-        ]
+        "nextpage": 0,
+        "pages": [{"num": 0, "label": "1", "active": true, "isellipsis": false}]
     }
 }}
 <div class="local-courseinsights-dashboard">
 
     {{#hasexport}}
-    <div class="local-courseinsights-export">
-        <a href="{{{exporturl}}}" class="btn btn-secondary">{{exportlabel}}</a>
+    <div class="ci-export">
+        <a href="{{{exporturl}}}" class="ci-btn-ghost">{{exportlabel}}</a>
     </div>
     {{/hasexport}}
 
     {{#hasrecords}}
-    <div class="local-courseinsights-stats">
-        <div class="local-courseinsights-stat-card">
-            <div class="local-courseinsights-stat-value">{{totalcourses}}</div>
-            <div class="local-courseinsights-stat-label">{{label_statcourses}}</div>
+    <div class="ci-overview-label">
+        <span class="ci-overview-pill">{{#str}} dashboardoverview, local_courseinsights {{/str}}</span>
+    </div>
+    <div class="ci-stats-grid">
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_statcourses}}</span>
+            <span class="ci-stat-value ci-stat-value--primary">{{totalcourses}}</span>
         </div>
-        <div class="local-courseinsights-stat-card">
-            <div class="local-courseinsights-stat-value">{{statenrolled}}</div>
-            <div class="local-courseinsights-stat-label">{{label_statenrolled}}</div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_statenrolled}}</span>
+            <span class="ci-stat-value ci-stat-value--secondary">{{statenrolled}}</span>
         </div>
         {{#showstatsubmissions}}
-        <div class="local-courseinsights-stat-card">
-            <div class="local-courseinsights-stat-value">{{statsubmissions}}</div>
-            <div class="local-courseinsights-stat-label">{{label_statsubmissions}}</div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_statsubmissions}}</span>
+            <span class="ci-stat-value ci-stat-value--tertiary">{{statsubmissions}}</span>
         </div>
         {{/showstatsubmissions}}
         {{#showstatattempts}}
-        <div class="local-courseinsights-stat-card">
-            <div class="local-courseinsights-stat-value">{{statattempts}}</div>
-            <div class="local-courseinsights-stat-label">{{label_statattempts}}</div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_statattempts}}</span>
+            <span class="ci-stat-value">{{statattempts}}</span>
         </div>
         {{/showstatattempts}}
     </div>
     {{/hasrecords}}
 
     {{#haschart}}
-    <div class="local-courseinsights-chart">
-        {{{chart}}}
+    <div class="ci-chart-card">
+        <h3 class="ci-chart-title">{{#str}} activityoverview, local_courseinsights {{/str}}</h3>
+        <div class="ci-chart-inner">
+            {{{chart}}}
+        </div>
         {{#charttruncated}}
-        <p class="local-courseinsights-chart-note">{{charttruncatenote}}</p>
+        <p class="ci-chart-note">{{charttruncatenote}}</p>
         {{/charttruncated}}
     </div>
     {{/haschart}}
 
-    {{#hasrecords}}
-    <div class="local-courseinsights-table">
-        <table class="generaltable table table-striped table-hover">
-            <thead>
-                <tr>
-                    {{#headers}}
-                    <th scope="col" data-ci-sortby="{{sortkey}}" tabindex="0">
-                        {{label}}<span class="local-courseinsights-sort-icon">{{#sortasc}}▲{{/sortasc}}{{#sortdesc}}▼{{/sortdesc}}</span>
-                    </th>
-                    {{/headers}}
-                </tr>
-            </thead>
-            <tbody>
-                {{#rows}}
-                <tr>
-                    {{#cells}}
-                    {{#isheader}}<th scope="row">{{value}}</th>{{/isheader}}
-                    {{^isheader}}<td>{{value}}</td>{{/isheader}}
-                    {{/cells}}
-                </tr>
-                {{/rows}}
-            </tbody>
-        </table>
+    {{#hascoursecards}}
+    <div class="ci-cards-section">
+        <h3 class="ci-section-title">{{courseinsightslabel}}</h3>
+        {{#coursecards}}
+        <div class="ci-course-card">
+            <div class="ci-course-card__inner">
+                <div class="ci-course-card__header">
+                    <div class="ci-course-card__header-text">
+                        <h4 class="ci-course-card__title">{{coursename}}</h4>
+                        {{#haslastactivity}}<p class="ci-course-card__subtitle">{{lastactivitysubtitle}}</p>{{/haslastactivity}}
+                    </div>
+                    <span class="ci-badge {{#isactive}}ci-badge--active{{/isactive}}{{^isactive}}ci-badge--inactive{{/isactive}}">{{statuslabel}}</span>
+                </div>
+                <div class="ci-progress-wrap">
+                    <div class="ci-progress-header">
+                        <span class="ci-progress-label">{{completionratelabel}}</span>
+                        <span class="ci-progress-pct">{{completionratedisplay}}</span>
+                    </div>
+                    <div class="ci-progress-bar">
+                        <div class="ci-progress-bar__fill" style="width: {{completionratewidth}}"></div>
+                    </div>
+                </div>
+                <div class="ci-course-meta">
+                    {{#meta}}
+                    <div class="ci-meta-item">
+                        <span class="ci-meta-label">{{label}}</span>
+                        <span class="ci-meta-value">{{value}}</span>
+                    </div>
+                    {{/meta}}
+                </div>
+            </div>
+            <a href="{{{detailurl}}}" class="ci-course-card__footer">{{detailedreportlabel}}</a>
+        </div>
+        {{/coursecards}}
     </div>
+    {{/hascoursecards}}
 
     {{#haspagination}}
     <nav class="local-courseinsights-pagination mt-3" aria-label="Page navigation">
@@ -200,10 +229,9 @@
         </div>
     </nav>
     {{/haspagination}}
-    {{/hasrecords}}
 
     {{^hasrecords}}
-    <div class="local-courseinsights-empty">
+    <div class="ci-empty">
         <p>{{emptystate}}</p>
     </div>
     {{/hasrecords}}

@@ -25,9 +25,9 @@
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/csvlib.class.php');
 
-require_login();
-
 $context = \core\context\system::instance();
+$PAGE->set_context($context);
+require_login();
 require_capability('local/courseinsights:export', $context);
 
 $filters = \local_courseinsights\report_service::get_filters_from_request();

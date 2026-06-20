@@ -4,23 +4,24 @@
 
 ## Description
 
-Course Insights is a Moodle local plugin that gives administrators and managers a fast, clear overview of student activity across all courses — in one place. It aggregates enrolment, assignment, quiz, and grade data from existing Moodle tables and presents it as a filterable, exportable dashboard. No configuration required after installation. No impact on student-facing pages.
+Course Insights is a Moodle local plugin that gives administrators and managers a fast, clear overview of student activity across all courses — in one place. It aggregates enrolment, assignment, quiz, forum, and grade data from existing Moodle tables and presents it as a filterable, exportable card dashboard with per-course detail pages. No configuration required after installation. No impact on student-facing pages.
 
 Whether you manage a dozen courses or hundreds, Course Insights lets you spot low engagement, track submission rates, and compare quiz performance without digging through individual course gradebooks.
 
 ## Features
 
-- **Course completion rate** — per-course percentage of enrolled students who have completed the course, sourced from Moodle's `{course_completions}` table; always visible alongside enrolled students
+- **Card-based dashboard** — each course is shown as a card with completion rate progress bar, enrolled/teacher/assignment/quiz meta, last activity subtitle, and Active/Inactive status badge
+- **Per-course detail page** — click "Detailed Report" on any card to open a full breakdown: completion rate hero, enrolled students, submissions, and Content Breakdown (Total Assignments, Total Quizzes, Forum Activities)
+- **Course completion rate** — per-course percentage of enrolled students who have completed the course, sourced from `{course_completions}`; shown as a progress bar on every card
 - **Live AJAX dashboard** — filter by category, course, date range, activity type, or student status; results update instantly without a full page reload
 - **Server-side pagination** — 50 courses per page; page changes via AJAX without losing filter state; safe on sites with hundreds of courses
-- **Course overview table** — per-course counts for enrolments, assignment submissions, quiz attempts, exam attempts, and mini exam attempts
-- **Average quiz grade column** — percentage average per course, across all matching quizzes
-- **Smart activity type filter** — view all activity or drill down to assignments, quizzes, exams, or mini exams; columns adjust automatically
+- **Summary stat cards** — always shows total Courses and Students; Submissions shown when assignment filter is active; Attempts shown when a quiz/exam filter is active
+- **Bar chart overview** — visual comparison of activity across courses (auto-truncated to top 20 for readability)
+- **Quick date presets** — "Last 7 days", "Last 30 days", "This month", and "Clear dates" buttons for fast date range selection
+- **Category filter** — nested subcategory support; selecting a parent category includes all descendant courses at any depth
 - **Student status filter** — report on active, suspended, or all enrolled students
-- **Teacher column** — comma-separated list of editing teachers assigned to each course
-- **Last student activity date** — per-course date of the most recent student access, always visible regardless of the active activity type filter
-- **Date range filter** — scope data to any time window by start and end date
-- **Bar chart overview** — visual comparison across courses (auto-truncated to top 20 for readability)
+- **Teacher column** — comma-separated list of editing teachers per course, visible on cards and the detail page
+- **Last student activity date** — per-course most recent student access; shown as subtitle on cards and in the detail page info grid
 - **CSV export** — download the full filtered dataset with one click
 - **Summary cache** — optional nightly pre-aggregation task for fast loading on large sites
 - **Navigation node** — accessible from Site administration → Reports → Course Insights
@@ -60,6 +61,8 @@ Site administration → Reports → Course Insights
 ```
 
 Direct URL: `/local/courseinsights/index.php`
+
+Per-course detail page: `/local/courseinsights/course_detail.php?courseid=X`
 
 ## Capabilities
 
@@ -113,13 +116,31 @@ Check the Exam keywords and Mini exam keywords settings. The plugin matches quiz
 
 ## Privacy
 
-This plugin reads existing Moodle course, enrolment, assignment, quiz, and grade data. It stores only aggregated course-level summary data in its own table (`local_courseinsights_summary`). No personal data is stored by this plugin.
+This plugin reads existing Moodle course, enrolment, assignment, quiz, forum, and grade data. It stores only aggregated course-level summary data in its own table (`local_courseinsights_summary`). No personal data is stored by this plugin.
 
 ## License
 
 GNU General Public License v3 or later — see [LICENSE](LICENSE) or https://www.gnu.org/licenses/gpl-3.0.html
 
 ## Changelog
+
+### 0.17.0
+
+- Course insight cards updated to match design: "Last activity: date" subtitle under course name, fixed meta grid (Enrolled / Teachers / Assignments / Quiz attempts), "Detailed Report" footer button on each card
+- New per-course detail page (`course_detail.php`) showing: breadcrumb navigation, completion rate hero, enrolled students card, submissions card, and **Content Breakdown** section (Total Assignments, Total Quizzes, Forum Activities sourced from `{forum}` table)
+- New `templates/course_detail.mustache` template with breadcrumb, stat hero, breakdown list, and info grid
+- Eight new lang strings: `backtodashboard`, `contentbreakdown`, `coursedetail`, `detailedreport`, `forumactivities`, `lastactivitylabel`, `totalassignments`, `totalquizzes`
+- `report_service::get_course_detail()` static method added: queries per-course completion rate, enrolled students, submissions, quiz attempts, assignments count, quizzes count, forum count, teachers, and last activity
+
+### 0.16.0
+
+- Complete visual redesign — table replaced with a responsive card-based layout
+- Dashboard Overview stat pills: Courses, Students, Submissions, Attempts
+- Activity Overview bar chart moved into a titled card section
+- Course insight cards with completion rate progress bar, meta grid, and Active/Inactive badge
+- CSS custom properties (`--ci-primary`, `--ci-surface-*`, etc.) scoped to plugin wrappers for consistent theming
+- `report_service::build_course_cards()` replaces `build_table_rows()` for card context
+- AJAX filter refresh, pagination, and CSV export all preserved from prior versions
 
 ### 0.15.0
 

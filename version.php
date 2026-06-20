@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_courseinsights';
-$plugin->version = 2026062003;
+$plugin->version = 2026062005;
 $plugin->requires = 2024100700; // Moodle 4.5.
 $plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.15.2';
+$plugin->release = '0.17.0';

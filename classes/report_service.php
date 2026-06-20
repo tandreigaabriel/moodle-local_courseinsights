@@ -998,4 +998,196 @@ class report_service {
 
         return ' AND u.suspended = 0';
     }
+
+    /**
+     * Builds structured course card context for the dashboard template.
+     *
+     * @param array $records Records as returned by get_course_overview().
+     * @param string $activitytype Active activity type filter.
+     * @return array
+     */
+    public static function build_course_cards(array $records, string $activitytype): array {
+        $cards = [];
+        $now = time();
+        $thirtydays = 30 * DAYSECS;
+
+        foreach ($records as $record) {
+            $completionrate = isset($record->completionrate) ? (float)$record->completionrate : null;
+            $lastactivity = !empty($record->lastactivity) ? (int)$record->lastactivity : null;
+            $isactive = $lastactivity && ($now - $lastactivity) < $thirtydays;
+
+            $lastdisplay = $lastactivity
+                ? userdate($lastactivity, get_string('strftimedate', 'langconfig'))
+                : null;
+
+            $detailurl = (new \moodle_url('/local/courseinsights/course_detail.php', [
+                'courseid' => $record->id,
+            ]))->out(false);
+
+            $cards[] = [
+                'coursename'            => format_string($record->fullname),
+                'courseid'              => $record->id,
+                'detailurl'             => $detailurl,
+                'isactive'              => $isactive,
+                'statuslabel'           => $isactive
+                    ? get_string('active', 'local_courseinsights')
+                    : get_string('inactive', 'local_courseinsights'),
+                'completionrate'        => $completionrate ?? 0,
+                'completionratedisplay' => $completionrate !== null ? $completionrate . '%' : '-',
+                'completionratewidth'   => ($completionrate !== null ? (int)$completionrate : 0) . '%',
+                'haslastactivity'       => $lastdisplay !== null,
+                'lastactivitysubtitle'  => $lastdisplay !== null
+                    ? get_string('lastactivitylabel', 'local_courseinsights') . ': ' . $lastdisplay
+                    : '',
+                'detailedreportlabel'   => get_string('detailedreport', 'local_courseinsights'),
+                'meta' => [
+                    [
+                        'label' => get_string('enrolledstudents', 'local_courseinsights'),
+                        'value' => (string)($record->enrolledstudents ?? 0),
+                    ],
+                    [
+                        'label' => get_string('teachers', 'local_courseinsights'),
+                        'value' => (string)($record->teachers ?? '-'),
+                    ],
+                    [
+                        'label' => get_string('assignments', 'local_courseinsights'),
+                        'value' => (string)($record->assignments ?? 0),
+                    ],
+                    [
+                        'label' => get_string('quizattempts', 'local_courseinsights'),
+                        'value' => (string)($record->quizattempts ?? 0),
+                    ],
+                ],
+            ];
+        }
+
+        return $cards;
+    }
+
+    /**
+     * Loads full detail data for a single course, used by the course detail page.
+     *
+     * @param int $courseid
+     * @return \stdClass|null
+     */
+    public static function get_course_detail(int $courseid): ?\stdClass {
+        global $DB;
+
+        if ($courseid <= 0) {
+            return null;
+        }
+
+        $roleids = self::get_student_role_ids();
+        [$roleinsql1, $rp1] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'drid1_');
+        [$roleinsql2, $rp2] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'drid2_');
+        [$roleinsql3, $rp3] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'drid3_');
+        [$roleinsql4, $rp4] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'drid4_');
+
+        $params = array_merge([
+            'sitecourse' => SITEID,
+            'courseid'   => $courseid,
+            'dctx1'      => CONTEXT_COURSE,
+            'dctx2'      => CONTEXT_COURSE,
+            'dctx3'      => CONTEXT_COURSE,
+            'dctx4'      => CONTEXT_COURSE,
+            'dctxteacher' => CONTEXT_COURSE,
+        ], $rp1, $rp2, $rp3, $rp4);
+
+        $sql = "
+            SELECT
+                c.id,
+                c.fullname,
+
+                (
+                    SELECT COUNT(DISTINCT ue.userid)
+                      FROM {enrol} e
+                      JOIN {user_enrolments} ue ON ue.enrolid = e.id
+                      JOIN {user} u ON u.id = ue.userid
+                      JOIN {context} ctx ON ctx.instanceid = e.courseid AND ctx.contextlevel = :dctx1
+                      JOIN {role_assignments} ra ON ra.contextid = ctx.id AND ra.userid = u.id AND ra.roleid {$roleinsql1}
+                     WHERE e.courseid = c.id
+                       AND e.status = 0
+                       AND ue.status = 0
+                       AND u.deleted = 0
+                       AND u.suspended = 0
+                ) AS enrolledstudents,
+
+                (
+                    SELECT ROUND(
+                        COUNT(DISTINCT CASE WHEN cc.timecompleted IS NOT NULL THEN ue.userid END)
+                        * 100.0
+                        / NULLIF(COUNT(DISTINCT ue.userid), 0),
+                        1
+                    )
+                      FROM {enrol} e
+                      JOIN {user_enrolments} ue ON ue.enrolid = e.id
+                      JOIN {user} u ON u.id = ue.userid
+                      JOIN {context} ctx ON ctx.instanceid = e.courseid AND ctx.contextlevel = :dctx2
+                      JOIN {role_assignments} ra ON ra.contextid = ctx.id AND ra.userid = u.id AND ra.roleid {$roleinsql2}
+                      LEFT JOIN {course_completions} cc ON cc.course = e.courseid AND cc.userid = ue.userid
+                     WHERE e.courseid = c.id
+                       AND e.status = 0
+                       AND ue.status = 0
+                       AND u.deleted = 0
+                       AND u.suspended = 0
+                ) AS completionrate,
+
+                (
+                    SELECT COUNT(DISTINCT s.userid)
+                      FROM {assign} a
+                      JOIN {assign_submission} s ON s.assignment = a.id
+                      JOIN {user} u ON u.id = s.userid
+                      JOIN {context} ctx ON ctx.instanceid = a.course AND ctx.contextlevel = :dctx3
+                      JOIN {role_assignments} ra ON ra.contextid = ctx.id AND ra.userid = u.id AND ra.roleid {$roleinsql3}
+                     WHERE a.course = c.id
+                       AND s.latest = 1
+                       AND s.status = 'submitted'
+                       AND u.deleted = 0
+                       AND u.suspended = 0
+                ) AS submittedassignments,
+
+                (
+                    SELECT COUNT(DISTINCT qa.userid)
+                      FROM {quiz} q
+                      JOIN {quiz_attempts} qa ON qa.quiz = q.id
+                      JOIN {user} u ON u.id = qa.userid
+                      JOIN {context} ctx ON ctx.instanceid = q.course AND ctx.contextlevel = :dctx4
+                      JOIN {role_assignments} ra ON ra.contextid = ctx.id AND ra.userid = u.id AND ra.roleid {$roleinsql4}
+                     WHERE q.course = c.id
+                       AND qa.state = 'finished'
+                       AND u.deleted = 0
+                       AND u.suspended = 0
+                ) AS quizattempts,
+
+                (SELECT COUNT(*) FROM {assign} a WHERE a.course = c.id) AS assignments,
+                (SELECT COUNT(*) FROM {quiz} q  WHERE q.course = c.id) AS quizzes,
+                (SELECT COUNT(*) FROM {forum} f  WHERE f.course = c.id) AS forumactivities,
+
+                (
+                    SELECT MAX(la.timeaccess)
+                      FROM {user_lastaccess} la
+                     WHERE la.courseid = c.id
+                ) AS lastactivity,
+
+                (
+                    SELECT GROUP_CONCAT(DISTINCT CONCAT(u.firstname, ' ', u.lastname)
+                                        ORDER BY u.lastname SEPARATOR ', ')
+                      FROM {role_assignments} ra
+                      JOIN {user} u ON u.id = ra.userid
+                      JOIN {context} ctx ON ctx.id = ra.contextid
+                           AND ctx.instanceid = c.id AND ctx.contextlevel = :dctxteacher
+                      JOIN {role} r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
+                     WHERE u.deleted = 0
+                ) AS teachers
+
+            FROM {course} c
+            WHERE c.id = :courseid
+              AND c.id <> :sitecourse
+              AND c.visible = 1
+        ";
+
+        $record = $DB->get_record_sql($sql, $params);
+
+        return $record ?: null;
+    }
 }

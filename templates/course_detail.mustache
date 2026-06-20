@@ -1,0 +1,164 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+    @package    local_courseinsights
+    @copyright  2026 Andrei Toma
+    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+{{!
+    Course Insights — single-course detail page.
+
+    @template local_courseinsights/course_detail
+
+    Context variables required for this template:
+    * coursename {string} Full name of the course.
+    * dashboardurl {string} URL back to the main dashboard.
+    * hasexport {bool} Whether to show the CSV export button.
+    * exporturl {string} Export CSV URL.
+    * exportlabel {string} Label for the export button.
+    * isactive {bool} Whether the course is active (last activity within 30 days).
+    * statuslabel {string} "Active" or "Inactive".
+    * completionratedisplay {string} e.g. "68.4%" or "-".
+    * completionratewidth {string} CSS width value, e.g. "68%".
+    * enrolledstudents {number} Count of enrolled active students.
+    * submittedassignments {number} Count of students with submitted assignments.
+    * quizattempts {number} Count of students with finished quiz attempts.
+    * assignments {number} Total number of assignment activities in the course.
+    * quizzes {number} Total number of quiz activities in the course.
+    * forumactivities {number} Total number of forum activities in the course.
+    * teachers {string} Comma-separated list of editing teachers.
+    * lastactivity {string} Formatted date of last student access, or "-".
+    * label_* {string} Translated labels for each field.
+
+    Example context (json):
+    {
+        "coursename": "Web Development",
+        "dashboardurl": "/local/courseinsights/index.php",
+        "hasexport": true,
+        "exporturl": "/local/courseinsights/export.php",
+        "exportlabel": "Export CSV",
+        "isactive": true,
+        "statuslabel": "Active",
+        "completionratedisplay": "68%",
+        "completionratewidth": "68%",
+        "enrolledstudents": 101,
+        "submittedassignments": 87,
+        "quizattempts": 1,
+        "assignments": 11,
+        "quizzes": 8,
+        "forumactivities": 24,
+        "teachers": "Admin User",
+        "lastactivity": "20 June 2026",
+        "label_completionrate": "Completion rate %",
+        "label_enrolled": "Enrolled students",
+        "label_submissions": "Students with assignment submissions",
+        "label_quizattempts": "Students with completed quiz attempts",
+        "label_contentbreakdown": "Content Breakdown",
+        "label_totalassignments": "Total Assignments",
+        "label_totalquizzes": "Total Quizzes",
+        "label_forumactivities": "Forum Activities",
+        "label_teachers": "Teachers",
+        "label_lastactivity": "Last student activity",
+        "label_backtodashboard": "Back to dashboard",
+        "dashboardlabel": "Course Insights Dashboard"
+    }
+}}
+<div class="local-courseinsights-detail">
+
+    {{! Breadcrumb }}
+    <nav class="ci-breadcrumb" aria-label="breadcrumb">
+        <a href="{{{dashboardurl}}}" class="ci-breadcrumb__link">{{dashboardlabel}}</a>
+        <span class="ci-breadcrumb__sep" aria-hidden="true">/</span>
+        <span class="ci-breadcrumb__current">{{coursename}}</span>
+    </nav>
+
+    {{! Page header }}
+    <div class="ci-detail-header">
+        <div class="ci-detail-header__text">
+            <h2 class="ci-detail-title">{{coursename}}</h2>
+            <span class="ci-badge {{#isactive}}ci-badge--active{{/isactive}}{{^isactive}}ci-badge--inactive{{/isactive}}">{{statuslabel}}</span>
+        </div>
+        {{#hasexport}}
+        <a href="{{{exporturl}}}" class="ci-btn-ghost">{{exportlabel}}</a>
+        {{/hasexport}}
+    </div>
+
+    {{! Stat cards }}
+    <div class="ci-detail-stats">
+        <div class="ci-detail-hero">
+            <div>
+                <span class="ci-stat-label">{{label_completionrate}}</span>
+                <span class="ci-stat-value" style="font-size:2.5rem;color:#fff;">{{completionratedisplay}}</span>
+            </div>
+            <div class="ci-progress-bar">
+                <div class="ci-progress-bar__fill" style="width: {{completionratewidth}}"></div>
+            </div>
+        </div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_enrolled}}</span>
+            <span class="ci-stat-value ci-stat-value--secondary">{{enrolledstudents}}</span>
+        </div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_submissions}}</span>
+            <span class="ci-stat-value ci-stat-value--tertiary">{{submittedassignments}}</span>
+        </div>
+    </div>
+
+    {{! Content Breakdown }}
+    <div class="ci-breakdown-card">
+        <h3 class="ci-section-title">{{label_contentbreakdown}}</h3>
+        <div class="ci-breakdown-list">
+            <div class="ci-breakdown-item">
+                <div class="ci-breakdown-left">
+                    <div class="ci-breakdown-icon ci-breakdown-icon--tertiary" aria-hidden="true">📄</div>
+                    <p class="ci-breakdown-name">{{label_totalassignments}}</p>
+                </div>
+                <span class="ci-breakdown-count ci-breakdown-count--tertiary">{{assignments}}</span>
+            </div>
+            <div class="ci-breakdown-item">
+                <div class="ci-breakdown-left">
+                    <div class="ci-breakdown-icon ci-breakdown-icon--secondary" aria-hidden="true">📝</div>
+                    <p class="ci-breakdown-name">{{label_totalquizzes}}</p>
+                </div>
+                <span class="ci-breakdown-count ci-breakdown-count--secondary">{{quizzes}}</span>
+            </div>
+            <div class="ci-breakdown-item">
+                <div class="ci-breakdown-left">
+                    <div class="ci-breakdown-icon ci-breakdown-icon--primary" aria-hidden="true">💬</div>
+                    <p class="ci-breakdown-name">{{label_forumactivities}}</p>
+                </div>
+                <span class="ci-breakdown-count ci-breakdown-count--primary">{{forumactivities}}</span>
+            </div>
+        </div>
+    </div>
+
+    {{! Extra info grid }}
+    <div class="ci-detail-info-grid">
+        <div class="ci-detail-info-item">
+            <span class="ci-meta-label">{{label_teachers}}</span>
+            <span class="ci-meta-value">{{teachers}}</span>
+        </div>
+        <div class="ci-detail-info-item">
+            <span class="ci-meta-label">{{label_lastactivity}}</span>
+            <span class="ci-meta-value">{{lastactivity}}</span>
+        </div>
+        <div class="ci-detail-info-item">
+            <span class="ci-meta-label">{{label_quizattempts}}</span>
+            <span class="ci-meta-value">{{quizattempts}}</span>
+        </div>
+    </div>
+
+</div>

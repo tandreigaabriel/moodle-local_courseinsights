@@ -24,15 +24,14 @@
 
 require_once(__DIR__ . '/../../config.php');
 
-require_login();
-
 $context = \core\context\system::instance();
+$PAGE->set_context($context);
+require_login();
 require_capability('local/courseinsights:view', $context);
 
 $url = new moodle_url('/local/courseinsights/index.php');
 
 $PAGE->set_url($url);
-$PAGE->set_context($context);
 $PAGE->set_title(get_string('dashboard', 'local_courseinsights'));
 $PAGE->set_heading(get_string('dashboard', 'local_courseinsights'));
 $PAGE->set_pagelayout('report');
@@ -119,16 +118,21 @@ $templatecontext = array_merge([
     'headers' => $headers,
     'rows' => $rows,
     'totalcourses' => $totalcount,
-    'label_statcourses' => get_string('stat_courses', 'local_courseinsights'),
-    'label_statenrolled' => get_string('stat_students', 'local_courseinsights'),
+    'label_statcourses'    => get_string('stat_courses', 'local_courseinsights'),
+    'label_statenrolled'   => get_string('stat_students', 'local_courseinsights'),
     'label_statsubmissions' => get_string('stat_submissions', 'local_courseinsights'),
-    'label_statattempts' => get_string('stat_attempts', 'local_courseinsights'),
+    'label_statattempts'   => get_string('stat_attempts', 'local_courseinsights'),
+    'hascoursecards'       => !empty($records),
+    'courseinsightslabel'  => get_string('pluginname', 'local_courseinsights'),
+    'completionratelabel'  => get_string('completionrate', 'local_courseinsights'),
+    'coursecards'          => \local_courseinsights\report_service::build_course_cards($records, $filters['activitytype']),
 ], $stats, $pagination);
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('dashboard', 'local_courseinsights'));
 
+echo html_writer::start_div('local-courseinsights-filter-wrap');
 $mform->display();
+echo html_writer::end_div();
 
 echo html_writer::start_div('', ['data-region' => 'local-courseinsights-dashboard']);
 echo $OUTPUT->render_from_template('local_courseinsights/dashboard', $templatecontext);
