@@ -267,6 +267,8 @@ class report_service {
      * Builds the course activity overview report, applying the given filters.
      *
      * @param array $filters Filters as returned by get_filters_from_request().
+     * @param int $page Zero-based page number for pagination.
+     * @param int $perpage Rows per page; 0 means unlimited (used by export and cache rebuild).
      * @return array
      */
     public static function get_course_overview(array $filters, int $page = 0, int $perpage = self::DEFAULT_PER_PAGE): array {
