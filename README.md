@@ -114,6 +114,11 @@ Confirm that the Student role IDs setting contains the correct Moodle role IDs f
 **Exams or mini exams show zero**
 Check the Exam keywords and Mini exam keywords settings. The plugin matches quiz names against these keywords (case-insensitive, partial match).
 
+## Support
+
+- **Bug reports & feature requests:** [github.com/tandreigaabriel/moodle-local_courseinsights/issues](https://github.com/tandreigaabriel/moodle-local_courseinsights/issues)
+- **Developed and maintained by:** [TAG Web Design](https://www.tandreig.com/plugins) — Andrei Toma
+
 ## Privacy
 
 This plugin reads existing Moodle course, enrolment, assignment, quiz, forum, and grade data. It stores only aggregated course-level summary data in its own table (`local_courseinsights_summary`). No personal data is stored by this plugin.
