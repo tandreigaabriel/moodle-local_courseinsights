@@ -1,17 +1,5 @@
-Checked 32 files in 0.4 seconds
-No syntax error found
-PS C:\laragon\www\moodle-plugin-ci-main\moodle-plugin-ci-main>
-PS C:\laragon\www\moodle-plugin-ci-main\moodle-plugin-ci-main> vendor\bin\phpcbf.bat --standard=moodle --extensions=php --ignore=_/vendor/_ C:\laragon\www\moodle\local\courseinsights
+Use this prompt for your developer:
 
-## PHPCBF RESULT SUMMARY
+Fix the Moodle PHPDoc CI failure in classes/report_service.php near line 2370. The method report_service::get_module_completion_funnel() has an incomplete PHPDoc parameter list. Compare the method signature with the docblock immediately above it and ensure every function parameter has a corresponding @param entry, using the exact parameter name and the same order. Remove any obsolete @param entries and ensure the method also has an accurate @return annotation. Then rerun:
 
-## FILE FIXED REMAINING
-
-...ww\moodle\local\courseinsights\classes\form\filter_form.php 21 0
-...oodle\local\courseinsights\lang\en\local_courseinsights.php 1 0
-
----
-
-## A TOTAL OF 22 ERRORS WERE FIXED IN 2 FILES
-
-Time: 3.49 secs; Memory: 26MB
+moodle-plugin-ci phpdoc ./plugin --max-warnings 0

@@ -2370,6 +2370,9 @@ class report_service {
     /**
      * Returns per-activity completion counts for courses that have completion tracking enabled.
      * Uses get_fast_modinfo() for activity names (Moodle-cached).
+     *
+     * @param int $courseid The course ID.
+     * @return array Array of activity completion rows with name, completed, enrolled, and rate.
      */
     public static function get_module_completion_funnel(int $courseid): array {
         global $DB;
