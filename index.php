@@ -267,14 +267,18 @@ echo html_writer::end_div();
 echo html_writer::end_div();
 
 echo html_writer::start_div('ci-page-main');
-echo html_writer::tag('button', '&#9776;', [
-    'class'         => 'ci-sidebar-toggle',
-    'id'            => 'ci-sidebar-toggle',
-    'aria-label'    => get_string('filters', 'local_courseinsights'),
-    'title'         => get_string('filters', 'local_courseinsights'),
-    'aria-expanded' => 'true',
-    'aria-controls' => 'ci-filter-sidebar',
-]);
+echo html_writer::tag(
+    'button',
+    html_writer::tag('span', '&#9776;', ['aria-hidden' => 'true']) .
+    html_writer::tag('span', get_string('filters', 'local_courseinsights')),
+    [
+        'class'         => 'ci-sidebar-toggle',
+        'id'            => 'ci-sidebar-toggle',
+        'aria-label'    => get_string('filters', 'local_courseinsights'),
+        'aria-expanded' => 'true',
+        'aria-controls' => 'ci-filter-sidebar',
+    ]
+);
 
 echo html_writer::start_div('ci-page-tabs');
 echo html_writer::tag('a', get_string('tab_dashboard', 'local_courseinsights'), [

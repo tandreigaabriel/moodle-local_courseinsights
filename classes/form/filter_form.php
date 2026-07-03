@@ -57,7 +57,7 @@ class filter_form extends \moodleform {
 
         $mform->addElement('autocomplete', 'courseid', get_string('course', 'local_courseinsights'), $courseoption, [
             'ajax'              => 'local_courseinsights/course_selector',
-            'noselectionstring' => get_string('allcourses', 'local_courseinsights'),
+            'noselectionstring' => '',
             'placeholder'       => get_string('allcourses', 'local_courseinsights'),
         ]);
         $mform->setType('courseid', PARAM_INT);
