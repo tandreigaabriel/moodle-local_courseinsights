@@ -48,6 +48,7 @@
     * completionratelabel {string} Label for the completion rate progress bar.
     * coursecards {array} Course insight cards; each item has:
     *     coursename {string}, isactive {bool}, statuslabel {string},
+    *     healthgrade {string}, healthgradeclass {string}, healthscoretooltip {string},
     *     completionratedisplay {string}, completionratewidth {string},
     *     meta {array} — four items each with label and value strings.
     * haspagination {bool} Whether to show pagination controls.
@@ -111,6 +112,8 @@
     {{#hasexport}}
     <div class="ci-export">
         <a href="{{{exporturl}}}" class="ci-btn-ghost">{{exportlabel}}</a>
+        <a href="{{{exportxlsxurl}}}" class="ci-btn-ghost">{{exportxlsxlabel}}</a>
+        <button type="button" class="ci-btn-ghost ci-btn-print" onclick="window.print()">{{#str}} printreport, local_courseinsights {{/str}}</button>
     </div>
     {{/hasexport}}
 
@@ -131,12 +134,28 @@
         <div class="ci-stat-card">
             <span class="ci-stat-label">{{label_statsubmissions}}</span>
             <span class="ci-stat-value ci-stat-value--tertiary">{{statsubmissions}}</span>
+            {{#hascompare}}{{#deltasubmissions}}
+            <div class="ci-compare-row">
+                <span class="ci-compare-vs">vs {{comparevalue}}</span>
+                {{#isup}}<span class="ci-delta ci-delta--up">&#x2191;{{pct}}%</span>{{/isup}}
+                {{#isdown}}<span class="ci-delta ci-delta--down">&#x2193;{{pct}}%</span>{{/isdown}}
+                {{#isneutral}}<span class="ci-delta ci-delta--neutral">&mdash;</span>{{/isneutral}}
+            </div>
+            {{/deltasubmissions}}{{/hascompare}}
         </div>
         {{/showstatsubmissions}}
         {{#showstatattempts}}
         <div class="ci-stat-card">
             <span class="ci-stat-label">{{label_statattempts}}</span>
             <span class="ci-stat-value">{{statattempts}}</span>
+            {{#hascompare}}{{#deltaattempts}}
+            <div class="ci-compare-row">
+                <span class="ci-compare-vs">vs {{comparevalue}}</span>
+                {{#isup}}<span class="ci-delta ci-delta--up">&#x2191;{{pct}}%</span>{{/isup}}
+                {{#isdown}}<span class="ci-delta ci-delta--down">&#x2193;{{pct}}%</span>{{/isdown}}
+                {{#isneutral}}<span class="ci-delta ci-delta--neutral">&mdash;</span>{{/isneutral}}
+            </div>
+            {{/deltaattempts}}{{/hascompare}}
         </div>
         {{/showstatattempts}}
     </div>
@@ -157,6 +176,7 @@
     {{#hascoursecards}}
     <div class="ci-cards-section">
         <h3 class="ci-section-title">{{courseinsightslabel}}</h3>
+        <div class="ci-cards-grid">
         {{#coursecards}}
         <div class="ci-course-card">
             <div class="ci-course-card__inner">
@@ -165,7 +185,10 @@
                         <h4 class="ci-course-card__title">{{coursename}}</h4>
                         {{#haslastactivity}}<p class="ci-course-card__subtitle">{{lastactivitysubtitle}}</p>{{/haslastactivity}}
                     </div>
-                    <span class="ci-badge {{#isactive}}ci-badge--active{{/isactive}}{{^isactive}}ci-badge--inactive{{/isactive}}">{{statuslabel}}</span>
+                    <div class="ci-course-card__badges">
+                        <span class="ci-health-badge {{healthgradeclass}}" title="{{healthscoretooltip}}">{{healthgrade}}</span>
+                        <span class="ci-badge {{#isactive}}ci-badge--active{{/isactive}}{{^isactive}}ci-badge--inactive{{/isactive}}">{{statuslabel}}</span>
+                    </div>
                 </div>
                 <div class="ci-progress-wrap">
                     <div class="ci-progress-header">
@@ -188,8 +211,13 @@
             <a href="{{{detailurl}}}" class="ci-course-card__footer">{{detailedreportlabel}}</a>
         </div>
         {{/coursecards}}
+        </div>
     </div>
     {{/hascoursecards}}
+
+    {{#pagination_info}}
+    <p class="ci-pagination-summary text-muted"><small>{{pagination_info}}</small></p>
+    {{/pagination_info}}
 
     {{#haspagination}}
     <nav class="local-courseinsights-pagination mt-3" aria-label="Page navigation">

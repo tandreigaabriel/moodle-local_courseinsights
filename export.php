@@ -30,9 +30,69 @@ $PAGE->set_context($context);
 require_login();
 require_capability('local/courseinsights:export', $context);
 
+$licstatus = \local_courseinsights\license::get_status();
+if (
+    $licstatus === \local_courseinsights\license::STATUS_EXPIRED ||
+        $licstatus === \local_courseinsights\license::STATUS_UNLICENSED
+) {
+    header('HTTP/1.1 403 Forbidden');
+    die('A valid Course Insights licence is required.');
+}
+
+$format  = optional_param('format', 'csv', PARAM_ALPHA);
 $filters = \local_courseinsights\report_service::get_filters_from_request();
 $records = \local_courseinsights\report_service::get_course_overview($filters, 0, 0);
 $columns = \local_courseinsights\report_service::get_visible_columns($filters['activitytype']);
+
+if ($format === 'xlsx') {
+    require_once($CFG->libdir . '/excellib.class.php');
+
+    $workbook  = new \MoodleExcelWorkbook('course-insights-' . date('Ymd-His'));
+    $worksheet = $workbook->add_worksheet(get_string('pluginname', 'local_courseinsights'));
+    $hdrfmt    = $workbook->add_format(['bold' => 1]);
+
+    $col = 0;
+    $worksheet->write(0, $col++, get_string('course', 'local_courseinsights'), $hdrfmt, 'string');
+    foreach ($columns as $column) {
+        $worksheet->write(0, $col++, get_string($column, 'local_courseinsights'), $hdrfmt, 'string');
+    }
+
+    $row = 1;
+    foreach ($records as $record) {
+        $col = 0;
+        $worksheet->write($row, $col++, format_string($record->fullname), null, 'string');
+
+        foreach ($columns as $column) {
+            $value = \local_courseinsights\report_service::get_column_value($column, $record);
+
+            if ($column === 'completionrate' || $column === 'avgquizgrade') {
+                $worksheet->write(
+                    $row,
+                    $col++,
+                    $value !== null ? (float) $value : '',
+                    null,
+                    $value !== null ? 'number' : 'string'
+                );
+            } else if ($column === 'lastactivity') {
+                $worksheet->write(
+                    $row,
+                    $col++,
+                    $value ? userdate($value, get_string('strftimedate', 'langconfig')) : '',
+                    null,
+                    'string'
+                );
+            } else if ($column === 'teachers') {
+                $worksheet->write($row, $col++, $value !== null ? (string) $value : '', null, 'string');
+            } else {
+                $worksheet->write($row, $col++, $value, null, is_numeric($value) ? 'number' : 'string');
+            }
+        }
+        $row++;
+    }
+
+    $workbook->close();
+    exit;
+}
 
 $csv = new csv_export_writer();
 $csv->set_filename('course-insights-' . date('Ymd-His'));

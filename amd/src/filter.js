@@ -26,7 +26,8 @@ import {replaceNodeContents} from 'core/templates';
 import {exception as notifyException} from 'core/notification';
 
 const SELECTORS = {
-    AUTO_SUBMIT: 'select[name="categoryid"], select[name="courseid"], select[name="activitytype"], select[name="studentstatus"]',
+    AUTO_SUBMIT: 'select[name="cohortid"], select[name="categoryid"],' +
+        ' select[name="courseid"], select[name="activitytype"], select[name="studentstatus"]',
     DASHBOARD: '[data-region="local-courseinsights-dashboard"]',
     PAGE_BTN: '[data-ci-page]',
     DATE_PRESET: '.local-courseinsights-date-preset',
@@ -34,7 +35,8 @@ const SELECTORS = {
 };
 
 const FILTER_FIELDS = [
-    'categoryid', 'courseid', 'startdate', 'enddate',
+    'cohortid', 'categoryid', 'courseid', 'startdate', 'enddate',
+    'compare_startdate', 'compare_enddate',
     'activitytype', 'studentstatus', 'usecache',
     'sortby', 'sortdir',
 ];
@@ -169,6 +171,34 @@ const initPagination = (container, contextid) => {
     });
 };
 
+const SIDEBAR_KEY = 'ci_sidebar_collapsed';
+
+const initSidebarToggle = () => {
+    const toggleBtn = document.getElementById('ci-sidebar-toggle');
+    const closeBtn  = document.getElementById('ci-sidebar-close');
+    const sidebar   = document.getElementById('ci-filter-sidebar');
+    if (!toggleBtn || !sidebar) {
+        return;
+    }
+
+    const setSidebar = (collapsed) => {
+        sidebar.classList.toggle('ci-sidebar--closed', collapsed);
+        toggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        try { localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0'); } catch (_e) {}
+    };
+
+    try {
+        if (localStorage.getItem(SIDEBAR_KEY) === '1') {
+            setSidebar(true);
+        }
+    } catch (_e) {}
+
+    toggleBtn.addEventListener('click', () => setSidebar(!sidebar.classList.contains('ci-sidebar--closed')));
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => setSidebar(true));
+    }
+};
+
 export const init = (contextid) => {
     const dashboard = document.querySelector(SELECTORS.DASHBOARD);
     if (dashboard) {
@@ -177,6 +207,7 @@ export const init = (contextid) => {
     }
 
     initDatePresets(contextid);
+    initSidebarToggle();
 
     document.querySelectorAll(SELECTORS.AUTO_SUBMIT).forEach(select => {
         select.addEventListener('change', () => {

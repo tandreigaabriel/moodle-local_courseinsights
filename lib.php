@@ -59,6 +59,7 @@ function local_courseinsights_output_fragment_dashboard(array $args): string {
     require_capability('local/courseinsights:view', \core\context\system::instance());
 
     $filters = [
+        'cohortid'      => (int) ($args['cohortid'] ?? 0),
         'courseid'      => (int) ($args['courseid'] ?? 0),
         'categoryid'    => (int) ($args['categoryid'] ?? 0),
         'startdate'     => clean_param($args['startdate'] ?? '', PARAM_TEXT),

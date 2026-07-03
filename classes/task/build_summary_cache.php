@@ -45,5 +45,20 @@ class build_summary_cache extends \core\task\scheduled_task {
     public function execute(): void {
         \local_courseinsights\report_service::rebuild_summary_cache();
         mtrace(get_string('cachebuilt', 'local_courseinsights'));
+
+        \local_courseinsights\report_service::rebuild_site_kpis_cache();
+        mtrace(get_string('sitecachebuilt', 'local_courseinsights'));
+
+        $result = \local_courseinsights\report_service::push_webhook();
+        if ($result['httpcode'] === 0 && $result['success']) {
+            mtrace(get_string('webhookskipped', 'local_courseinsights'));
+        } else if ($result['success']) {
+            mtrace(get_string('webhooksent', 'local_courseinsights', $result['httpcode']));
+        } else {
+            mtrace(get_string('webhookfailed', 'local_courseinsights', (object)[
+                'httpcode' => $result['httpcode'],
+                'error'    => $result['error'],
+            ]));
+        }
     }
 }

@@ -42,6 +42,40 @@
     * teachers {string} Comma-separated list of editing teachers.
     * lastactivity {string} Formatted date of last student access, or "-".
     * label_* {string} Translated labels for each field.
+    * hasgradedata {bool} Whether grade distribution data is available.
+    * gradedistribution {array} Array of {label, count, pct, heightpct} objects.
+    * label_gradedistribution {string} Section heading for the histogram.
+    * label_gradedistribution_nodata {string} Message when no grade data exists.
+    * hastimelinedata {bool} Whether submission timeline data is available.
+    * submissiontimeline {array} 30 day objects: {label, count, heightpct, showlabel, tooltip}.
+    * label_submissiontimeline {string} Section heading for the timeline chart.
+    * label_submissiontimeline_nodata {string} Message when no submissions in last 30 days.
+    * hasheatmapdata {bool} Whether engagement heatmap data is available.
+    * heatmapweeks {array} 52 week objects, each with a days array of 7 day objects.
+    * label_engagementheatmap {string} Section heading for the heatmap.
+    * label_engagementheatmap_nodata {string} Message when no log data exists.
+    * hasstudentaccess {bool} Whether the current user can see the student activity table.
+    * hasstudents {bool} Whether any students are enrolled.
+    * students {array} Per-student rows: {fullname, lastaccess, hasnoaccess, submissions, quizattempts}.
+    * label_studentactivitytable {string} Section heading for the student table.
+    * label_studentactivitytable_nodata {string} Message when no students found.
+    * label_col_student {string} Column header: student name.
+    * label_col_lastaccess {string} Column header: last access.
+    * label_col_submissions {string} Column header: submissions.
+    * label_col_quizattempts {string} Column header: quiz attempts.
+    * hasquizbreakdown {bool} Whether any quizzes have grade data.
+    * quizbreakdown {array} Per-quiz rows: {quizname, attempts, avgpct, minpct, maxpct, passrate}.
+    * label_quizbreakdown {string} Section heading for the quiz breakdown table.
+    * label_quizbreakdown_nodata {string} Message when no quiz grade data exists.
+    * label_col_quiz {string} Column header: quiz name.
+    * label_col_quizstudents {string} Column header: students with a grade.
+    * label_col_avg {string} Column header: average grade %.
+    * label_col_min {string} Column header: minimum grade %.
+    * label_col_max {string} Column header: maximum grade %.
+    * label_col_passrate {string} Column header: pass rate %.
+    * printurl {string} URL to the print/PDF view of this course detail.
+    * printlabel {string} Label for the print button.
+    * isprint {bool} True when rendering in print/PDF mode (hides interactive controls).
 
     Example context (json):
     {
@@ -62,6 +96,21 @@
         "forumactivities": 24,
         "teachers": "Admin User",
         "lastactivity": "20 June 2026",
+        "hasgradedata": true,
+        "gradedistribution": [
+            {"label": "0–9%",    "count": 2,  "heightpct": 20},
+            {"label": "10–19%",  "count": 3,  "heightpct": 30},
+            {"label": "20–29%",  "count": 5,  "heightpct": 50},
+            {"label": "30–39%",  "count": 8,  "heightpct": 80},
+            {"label": "40–49%",  "count": 10, "heightpct": 100},
+            {"label": "50–59%",  "count": 9,  "heightpct": 90},
+            {"label": "60–69%",  "count": 7,  "heightpct": 70},
+            {"label": "70–79%",  "count": 6,  "heightpct": 60},
+            {"label": "80–89%",  "count": 4,  "heightpct": 40},
+            {"label": "90–100%", "count": 1,  "heightpct": 10}
+        ],
+        "label_gradedistribution": "Grade Distribution",
+        "label_gradedistribution_nodata": "No grade data available for this course.",
         "label_completionrate": "Completion rate %",
         "label_enrolled": "Enrolled students",
         "label_submissions": "Students with assignment submissions",
@@ -78,6 +127,14 @@
 }}
 <div class="local-courseinsights-detail">
 
+    {{! Brand header }}
+    {{^isprint}}
+    <div class="ci-brand-header">
+        {{#hasbrandlogo}}<img src="{{{brandlogourl}}}" alt="{{brandlabel}}" class="ci-brand-header__logo">{{/hasbrandlogo}}
+        <span class="ci-brand-header__name">{{brandlabel}}</span>
+    </div>
+    {{/isprint}}
+
     {{! Breadcrumb }}
     <nav class="ci-breadcrumb" aria-label="breadcrumb">
         <a href="{{{dashboardurl}}}" class="ci-breadcrumb__link">{{dashboardlabel}}</a>
@@ -91,9 +148,14 @@
             <h2 class="ci-detail-title">{{coursename}}</h2>
             <span class="ci-badge {{#isactive}}ci-badge--active{{/isactive}}{{^isactive}}ci-badge--inactive{{/isactive}}">{{statuslabel}}</span>
         </div>
-        {{#hasexport}}
-        <a href="{{{exporturl}}}" class="ci-btn-ghost">{{exportlabel}}</a>
-        {{/hasexport}}
+        {{^isprint}}
+        <div class="ci-detail-header__actions">
+            {{#hasexport}}
+            <a href="{{{exporturl}}}" class="ci-btn-ghost">{{exportlabel}}</a>
+            {{/hasexport}}
+            <a href="{{{printurl}}}" class="ci-btn-ghost ci-btn-print" target="_blank">{{printlabel}}</a>
+        </div>
+        {{/isprint}}
     </div>
 
     {{! Stat cards }}
@@ -115,7 +177,59 @@
             <span class="ci-stat-label">{{label_submissions}}</span>
             <span class="ci-stat-value ci-stat-value--tertiary">{{submittedassignments}}</span>
         </div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_quizattempts}}</span>
+            <span class="ci-stat-value">{{quizattempts}}</span>
+        </div>
     </div>
+
+    {{! Meta strip }}
+    <div class="ci-detail-meta">
+        <div class="ci-detail-meta__item">
+            <span class="ci-meta-label">{{label_teachers}}</span>
+            <span class="ci-meta-value">{{teachers}}</span>
+        </div>
+        <div class="ci-detail-meta__item">
+            <span class="ci-meta-label">{{label_lastactivity}}</span>
+            <span class="ci-meta-value">{{lastactivity}}</span>
+        </div>
+    </div>
+
+    {{! Trend comparison }}
+    {{^isprint}}
+    <div class="ci-trend">
+        <h3 class="ci-section-title">{{label_trend}}</h3>
+        <div class="ci-trend__grid">
+            <div class="ci-trend__card">
+                <span class="ci-trend__label">{{label_trend_active}}</span>
+                <span class="ci-trend__value">{{trend_active_curr}}</span>
+                {{#trend_active_flat}}<span class="ci-trend__delta ci-trend__delta--flat">= {{label_trend_vs}}</span>{{/trend_active_flat}}
+                {{^trend_active_flat}}
+                    {{#trend_active_up}}<span class="ci-trend__delta ci-trend__delta--up">&#8593; +{{trend_active_delta}} {{label_trend_vs}}</span>{{/trend_active_up}}
+                    {{^trend_active_up}}<span class="ci-trend__delta ci-trend__delta--down">&#8595; &minus;{{trend_active_delta}} {{label_trend_vs}}</span>{{/trend_active_up}}
+                {{/trend_active_flat}}
+            </div>
+            <div class="ci-trend__card">
+                <span class="ci-trend__label">{{label_trend_subs}}</span>
+                <span class="ci-trend__value">{{trend_subs_curr}}</span>
+                {{#trend_subs_flat}}<span class="ci-trend__delta ci-trend__delta--flat">= {{label_trend_vs}}</span>{{/trend_subs_flat}}
+                {{^trend_subs_flat}}
+                    {{#trend_subs_up}}<span class="ci-trend__delta ci-trend__delta--up">&#8593; +{{trend_subs_delta}} {{label_trend_vs}}</span>{{/trend_subs_up}}
+                    {{^trend_subs_up}}<span class="ci-trend__delta ci-trend__delta--down">&#8595; &minus;{{trend_subs_delta}} {{label_trend_vs}}</span>{{/trend_subs_up}}
+                {{/trend_subs_flat}}
+            </div>
+            <div class="ci-trend__card">
+                <span class="ci-trend__label">{{label_trend_quiz}}</span>
+                <span class="ci-trend__value">{{trend_quiz_curr}}</span>
+                {{#trend_quiz_flat}}<span class="ci-trend__delta ci-trend__delta--flat">= {{label_trend_vs}}</span>{{/trend_quiz_flat}}
+                {{^trend_quiz_flat}}
+                    {{#trend_quiz_up}}<span class="ci-trend__delta ci-trend__delta--up">&#8593; +{{trend_quiz_delta}} {{label_trend_vs}}</span>{{/trend_quiz_up}}
+                    {{^trend_quiz_up}}<span class="ci-trend__delta ci-trend__delta--down">&#8595; &minus;{{trend_quiz_delta}} {{label_trend_vs}}</span>{{/trend_quiz_up}}
+                {{/trend_quiz_flat}}
+            </div>
+        </div>
+    </div>
+    {{/isprint}}
 
     {{! Content Breakdown }}
     <div class="ci-breakdown-card">
@@ -145,20 +259,203 @@
         </div>
     </div>
 
-    {{! Extra info grid }}
-    <div class="ci-detail-info-grid">
-        <div class="ci-detail-info-item">
-            <span class="ci-meta-label">{{label_teachers}}</span>
-            <span class="ci-meta-value">{{teachers}}</span>
+    {{! Grade distribution histogram }}
+    <div class="ci-grade-dist">
+        <h3 class="ci-section-title">{{label_gradedistribution}}</h3>
+        {{#hasgradedata}}
+        <div class="ci-grade-dist__chart" role="img" aria-label="{{label_gradedistribution}}">
+            {{#gradedistribution}}
+            <div class="ci-grade-dist__col">
+                <span class="ci-grade-dist__count">{{pct}}%</span>
+                <div class="ci-grade-dist__bar-wrap">
+                    <div class="ci-grade-dist__bar" style="height: {{heightpct}}%"></div>
+                </div>
+                <span class="ci-grade-dist__label">{{label}}</span>
+            </div>
+            {{/gradedistribution}}
         </div>
-        <div class="ci-detail-info-item">
-            <span class="ci-meta-label">{{label_lastactivity}}</span>
-            <span class="ci-meta-value">{{lastactivity}}</span>
-        </div>
-        <div class="ci-detail-info-item">
-            <span class="ci-meta-label">{{label_quizattempts}}</span>
-            <span class="ci-meta-value">{{quizattempts}}</span>
-        </div>
+        {{/hasgradedata}}
+        {{^hasgradedata}}
+        <p class="ci-no-data">{{label_gradedistribution_nodata}}</p>
+        {{/hasgradedata}}
     </div>
+
+    {{! Quiz score breakdown }}
+    <div class="ci-quiz-breakdown">
+        <h3 class="ci-section-title">{{label_quizbreakdown}}</h3>
+        {{#hasquizbreakdown}}
+        <div class="ci-quiz-breakdown__wrap">
+            <table class="ci-quiz-breakdown__tbl">
+                <thead>
+                    <tr>
+                        <th scope="col">{{label_col_quiz}}</th>
+                        <th scope="col">{{label_col_quizstudents}}</th>
+                        <th scope="col">{{label_col_avg}}</th>
+                        <th scope="col">{{label_col_min}}</th>
+                        <th scope="col">{{label_col_max}}</th>
+                        <th scope="col">{{label_col_passrate}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#quizbreakdown}}
+                    <tr>
+                        <td>{{quizname}}</td>
+                        <td>{{attempts}}</td>
+                        <td>{{avgpct}}</td>
+                        <td>{{minpct}}</td>
+                        <td>{{maxpct}}</td>
+                        <td>{{passrate}}</td>
+                    </tr>
+                    {{/quizbreakdown}}
+                </tbody>
+            </table>
+        </div>
+        {{/hasquizbreakdown}}
+        {{^hasquizbreakdown}}
+        <p class="ci-no-data">{{label_quizbreakdown_nodata}}</p>
+        {{/hasquizbreakdown}}
+    </div>
+
+    {{! Module completion funnel }}
+    <div class="ci-module-funnel">
+        <h3 class="ci-section-title">{{label_modulefunnel}}</h3>
+        {{#hasmodulefunnel}}
+        <div class="ci-quiz-breakdown__wrap">
+            <table class="ci-quiz-breakdown__tbl">
+                <thead>
+                    <tr>
+                        <th scope="col">{{label_col_activity}}</th>
+                        <th scope="col">{{label_col_modtype}}</th>
+                        <th scope="col">{{label_col_completions}}</th>
+                        <th scope="col" class="ci-funnel-pct-col">{{label_col_completionpct}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#modulefunnel}}
+                    <tr>
+                        <td>{{activityname}}</td>
+                        <td><span class="ci-modbadge">{{modtype}}</span></td>
+                        <td>{{completions}} / {{enrolled}}</td>
+                        <td>
+                            <div class="ci-funnel-bar-wrap">
+                                <div class="ci-funnel-bar{{#islowpct}} ci-funnel-bar--low{{/islowpct}}" style="width:{{widthpct}}%"></div>
+                            </div>
+                            {{pct}}%
+                        </td>
+                    </tr>
+                    {{/modulefunnel}}
+                </tbody>
+            </table>
+        </div>
+        {{/hasmodulefunnel}}
+        {{^hasmodulefunnel}}
+        <p class="ci-no-data">{{label_modulefunnel_nodata}}</p>
+        {{/hasmodulefunnel}}
+    </div>
+
+    {{! Top students leaderboard }}
+    <div class="ci-leaderboard">
+        <h3 class="ci-section-title">{{label_leaderboard}}</h3>
+        {{#hasleaderboard}}
+        <div class="ci-quiz-breakdown__wrap">
+            <table class="ci-quiz-breakdown__tbl">
+                <thead><tr>
+                    <th class="ci-lb-rank-col">{{label_col_rank}}</th>
+                    <th>{{label_col_student}}</th>
+                    <th class="ci-lb-grade-col">{{label_col_grade}}</th>
+                    <th class="ci-funnel-pct-col">{{label_col_score_pct}}</th>
+                </tr></thead>
+                <tbody>{{#leaderboard}}
+                <tr class="{{rankrowclass}}">
+                    <td class="ci-lb-rank"><span class="ci-rank-badge {{rankbadgeclass}}">{{rank}}</span></td>
+                    <td>{{fullname}}</td>
+                    <td>{{finalgrade}} / {{grademax}}</td>
+                    <td>
+                        <div class="ci-funnel-bar-wrap">
+                            <div class="ci-funnel-bar" style="width:{{widthpct}}%"></div>
+                        </div>
+                        {{pct}}%
+                    </td>
+                </tr>
+                {{/leaderboard}}</tbody>
+            </table>
+        </div>
+        {{/hasleaderboard}}
+        {{^hasleaderboard}}<p class="ci-no-data">{{label_leaderboard_nodata}}</p>{{/hasleaderboard}}
+    </div>
+
+    {{! Assignment submission timeline }}
+    <div class="ci-timeline">
+        <h3 class="ci-section-title">{{label_submissiontimeline}}</h3>
+        {{#hastimelinedata}}
+        <div class="ci-timeline__chart" role="img" aria-label="{{label_submissiontimeline}}">
+            {{#submissiontimeline}}
+            <div class="ci-timeline__col">
+                <div class="ci-timeline__bar-wrap">
+                    <div class="ci-timeline__bar" style="height: {{heightpct}}%" title="{{tooltip}}"></div>
+                </div>
+                <span class="ci-timeline__label{{^showlabel}} ci-timeline__label--hidden{{/showlabel}}">{{label}}</span>
+            </div>
+            {{/submissiontimeline}}
+        </div>
+        {{/hastimelinedata}}
+        {{^hastimelinedata}}
+        <p class="ci-no-data">{{label_submissiontimeline_nodata}}</p>
+        {{/hastimelinedata}}
+    </div>
+
+    {{! Engagement heatmap }}
+    <div class="ci-heatmap">
+        <h3 class="ci-section-title">{{label_engagementheatmap}}</h3>
+        {{#hasheatmapdata}}
+        <div class="ci-heatmap__grid" role="img" aria-label="{{label_engagementheatmap}}">
+            {{#heatmapweeks}}
+            <div class="ci-heatmap__week">
+                {{#days}}
+                <div class="ci-heatmap__cell {{levelclass}}" title="{{tooltip}}"></div>
+                {{/days}}
+            </div>
+            {{/heatmapweeks}}
+        </div>
+        {{/hasheatmapdata}}
+        {{^hasheatmapdata}}
+        <p class="ci-no-data">{{label_engagementheatmap_nodata}}</p>
+        {{/hasheatmapdata}}
+    </div>
+
+    {{! Student activity table (admin/manager only) }}
+    {{#hasstudentaccess}}
+    <div class="ci-student-table">
+        <h3 class="ci-section-title">{{label_studentactivitytable}}</h3>
+        {{#hasstudents}}
+        <div class="ci-student-table__wrap">
+            <table class="ci-student-table__tbl">
+                <thead>
+                    <tr>
+                        <th scope="col">{{label_col_student}}</th>
+                        <th scope="col">{{label_col_lastaccess}}</th>
+                        <th scope="col">{{label_col_submissions}}</th>
+                        <th scope="col">{{label_col_quizattempts}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#students}}
+                    <tr class="{{#hasnoaccess}}ci-student-table__row--never{{/hasnoaccess}}">
+                        <td>{{fullname}}</td>
+                        <td>{{lastaccess}}</td>
+                        <td>{{submissions}}</td>
+                        <td>{{quizattempts}}</td>
+                    </tr>
+                    {{/students}}
+                </tbody>
+            </table>
+        </div>
+        {{/hasstudents}}
+        {{^hasstudents}}
+        <p class="ci-no-data">{{label_studentactivitytable_nodata}}</p>
+        {{/hasstudents}}
+    </div>
+    {{/hasstudentaccess}}
+
 
 </div>

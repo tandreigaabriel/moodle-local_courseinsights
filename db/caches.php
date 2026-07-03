@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version information.
+ * Cache definitions for local_courseinsights.
  *
  * @package    local_courseinsights
  * @copyright  2026 Andrei Toma
@@ -24,8 +24,15 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_courseinsights';
-$plugin->version = 2026070403;
-$plugin->requires = 2024100700; // Moodle 4.5.
-$plugin->maturity = MATURITY_BETA;
-$plugin->release = '0.46.2';
+$definitions = [
+    'dropdown_options' => [
+        'mode'       => cache_store::MODE_APPLICATION,
+        'ttl'        => 300,
+        'simplekeys' => true,
+    ],
+    'site_kpis' => [
+        'mode'       => cache_store::MODE_APPLICATION,
+        'ttl'        => 1800,
+        'simplekeys' => true,
+    ],
+];

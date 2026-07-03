@@ -1,0 +1,227 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+    @package    local_courseinsights
+    @copyright  2026 Andrei Toma
+    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+{{!
+    Site-wide KPI overview: stat cards, top-10 tables, monthly trend, at-risk students.
+
+    @template local_courseinsights/site_kpis
+
+    Context variables required for this template:
+    * label_kpi_totalcourses {string}
+    * kpi_totalcourses {number}
+    * label_kpi_enrolments {string}
+    * kpi_enrolments {number}
+    * label_kpi_coursecompletions {string}
+    * kpi_coursecompletions {number}
+    * label_kpi_activitycompletions {string}
+    * kpi_activitycompletions {number}
+    * label_kpi_activeusers {string}
+    * kpi_activeusers {number}
+    * label_kpi_newusers {string}
+    * kpi_newusers {number}
+    * top10_enrolment_label {string}
+    * top10_completion_label {string}
+    * top10_col_course {string}
+    * top10_col_value {string}
+    * top10_col_pct {string}
+    * top_enrolments {array} rank, coursename, count
+    * top_completions {array} rank, coursename, count
+    * has_monthly_trend {boolean}
+    * monthly_trend_label {string}
+    * monthly_col_month {string}
+    * monthly_col_activeusers {string}
+    * monthly_col_events {string}
+    * monthly_trend {array} label, active_users, events
+    * atrisk_heading {string}
+    * atrisk_days {number}
+    * has_atrisk {boolean}
+    * atrisk_col_student {string}
+    * atrisk_col_course {string}
+    * atrisk_col_lastaccess {string}
+    * atrisk_col_days {string}
+    * atrisk_nodata {string}
+    * atrisk_students {array} fullname, coursename, courseurl, lastaccess, daysinactive
+
+    Example context (json):
+    {
+        "label_kpi_totalcourses": "Total courses",
+        "kpi_totalcourses": 25,
+        "label_kpi_enrolments": "Total enrolments",
+        "kpi_enrolments": 450,
+        "label_kpi_coursecompletions": "Course completions",
+        "kpi_coursecompletions": 120,
+        "label_kpi_activitycompletions": "Activity completions",
+        "kpi_activitycompletions": 1500,
+        "label_kpi_activeusers": "Active users (30d)",
+        "kpi_activeusers": 200,
+        "label_kpi_newusers": "New users (30d)",
+        "kpi_newusers": 18,
+        "top10_enrolment_label": "Top 10 by enrolment",
+        "top10_completion_label": "Top 10 by completion",
+        "top10_col_course": "Course",
+        "top10_col_value": "Enrolments",
+        "top10_col_pct": "Completion %",
+        "top_enrolments": [{"rank": 1, "coursename": "Introduction to PHP", "count": 45}],
+        "top_completions": [{"rank": 1, "coursename": "Introduction to PHP", "count": 30}],
+        "has_monthly_trend": true,
+        "monthly_trend_label": "Monthly active users",
+        "monthly_col_month": "Month",
+        "monthly_col_activeusers": "Active users",
+        "monthly_col_events": "Events",
+        "monthly_trend": [{"label": "2026-06", "active_users": 120, "events": 890}],
+        "atrisk_heading": "At-risk students",
+        "atrisk_days": 30,
+        "has_atrisk": true,
+        "atrisk_col_student": "Student",
+        "atrisk_col_course": "Course",
+        "atrisk_col_lastaccess": "Last access",
+        "atrisk_col_days": "Days inactive",
+        "atrisk_nodata": "No at-risk students found.",
+        "atrisk_students": [{"fullname": "Jane Smith", "coursename": "PHP Basics", "courseurl": "/course/view.php?id=2", "lastaccess": "2026-05-01", "daysinactive": 45}]
+    }
+}}
+<div class="local-courseinsights-dashboard">
+
+    <div class="ci-kpi-grid">
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_kpi_totalcourses}}</span>
+            <span class="ci-stat-value ci-stat-value--primary">{{kpi_totalcourses}}</span>
+        </div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_kpi_enrolments}}</span>
+            <span class="ci-stat-value ci-stat-value--secondary">{{kpi_enrolments}}</span>
+        </div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_kpi_coursecompletions}}</span>
+            <span class="ci-stat-value ci-stat-value--tertiary">{{kpi_coursecompletions}}</span>
+        </div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_kpi_activitycompletions}}</span>
+            <span class="ci-stat-value">{{kpi_activitycompletions}}</span>
+        </div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_kpi_activeusers}}</span>
+            <span class="ci-stat-value">{{kpi_activeusers}}</span>
+        </div>
+        <div class="ci-stat-card">
+            <span class="ci-stat-label">{{label_kpi_newusers}}</span>
+            <span class="ci-stat-value">{{kpi_newusers}}</span>
+        </div>
+    </div>
+
+    <div class="ci-top10-grid">
+        <div class="ci-chart-card">
+            <h3 class="ci-chart-title">{{top10_enrolment_label}}</h3>
+            <table class="ci-top10-table">
+                <thead>
+                    <tr>
+                        <th class="ci-top10-rank">#</th>
+                        <th>{{top10_col_course}}</th>
+                        <th class="ci-top10-value">{{top10_col_value}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#top_enrolments}}
+                    <tr>
+                        <td class="ci-top10-rank">{{rank}}</td>
+                        <td>{{coursename}}</td>
+                        <td class="ci-top10-value">{{count}}</td>
+                    </tr>
+                    {{/top_enrolments}}
+                </tbody>
+            </table>
+        </div>
+        <div class="ci-chart-card">
+            <h3 class="ci-chart-title">{{top10_completion_label}}</h3>
+            <table class="ci-top10-table">
+                <thead>
+                    <tr>
+                        <th class="ci-top10-rank">#</th>
+                        <th>{{top10_col_course}}</th>
+                        <th class="ci-top10-value">{{top10_col_pct}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#top_completions}}
+                    <tr>
+                        <td class="ci-top10-rank">{{rank}}</td>
+                        <td>{{coursename}}</td>
+                        <td class="ci-top10-value">{{count}}</td>
+                    </tr>
+                    {{/top_completions}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{#has_monthly_trend}}
+    <div class="ci-chart-card ci-chart-card--wide">
+        <h3 class="ci-chart-title">{{monthly_trend_label}}</h3>
+        <table class="ci-top10-table">
+            <thead>
+                <tr>
+                    <th>{{monthly_col_month}}</th>
+                    <th class="ci-top10-value">{{monthly_col_activeusers}}</th>
+                    <th class="ci-top10-value">{{monthly_col_events}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#monthly_trend}}
+                <tr>
+                    <td>{{label}}</td>
+                    <td class="ci-top10-value">{{active_users}}</td>
+                    <td class="ci-top10-value">{{events}}</td>
+                </tr>
+                {{/monthly_trend}}
+            </tbody>
+        </table>
+    </div>
+    {{/has_monthly_trend}}
+
+    <div class="ci-chart-card ci-chart-card--wide">
+        <h3 class="ci-chart-title">{{atrisk_heading}} <span class="ci-atrisk-days">({{atrisk_days}}d)</span></h3>
+        {{#has_atrisk}}
+        <table class="ci-top10-table">
+            <thead>
+                <tr>
+                    <th>{{atrisk_col_student}}</th>
+                    <th>{{atrisk_col_course}}</th>
+                    <th class="ci-top10-value">{{atrisk_col_lastaccess}}</th>
+                    <th class="ci-top10-value">{{atrisk_col_days}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#atrisk_students}}
+                <tr>
+                    <td>{{fullname}}</td>
+                    <td><a href="{{courseurl}}">{{coursename}}</a></td>
+                    <td class="ci-top10-value">{{lastaccess}}</td>
+                    <td class="ci-top10-value">{{daysinactive}}</td>
+                </tr>
+                {{/atrisk_students}}
+            </tbody>
+        </table>
+        {{/has_atrisk}}
+        {{^has_atrisk}}
+        <p class="ci-nodata">{{atrisk_nodata}}</p>
+        {{/has_atrisk}}
+    </div>
+
+</div>

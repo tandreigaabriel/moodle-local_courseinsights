@@ -24,83 +24,257 @@
 
 $string['active'] = 'Active';
 $string['activityoverview'] = 'Activity Overview';
-$string['backtodashboard'] = 'Back to dashboard';
-$string['contentbreakdown'] = 'Content Breakdown';
-$string['coursedetail'] = 'Course Detail';
-$string['dashboardoverview'] = 'Dashboard Overview';
-$string['detailedreport'] = 'Detailed Report';
-$string['forumactivities'] = 'Forum Activities';
-$string['lastactivitylabel'] = 'Last activity';
-$string['totalassignments'] = 'Total Assignments';
-$string['totalquizzes'] = 'Total Quizzes';
 $string['activitytype'] = 'Activity type';
 $string['activitytype_all'] = 'All activity types';
 $string['activitytype_assign'] = 'Assignments';
 $string['activitytype_exam'] = 'Exams';
 $string['activitytype_mini'] = 'Mini exams';
 $string['activitytype_quiz'] = 'Quizzes / exams';
+$string['advanced_options'] = 'Advanced options';
+$string['alert_body'] = 'This is an automated alert from Course Insights.
+
+Course: {$a->coursename}
+
+Reason(s):
+{$a->reasons}
+
+Completion rate: {$a->completionrate}%
+Last student activity: {$a->lastactivitydate}
+
+View the dashboard: {$a->dashboardurl}
+
+---
+To adjust these alerts, go to Site administration > Local plugins > Course Insights settings.';
+$string['alert_reason_inactive'] = 'No student activity recorded for {$a->dayssince} days (threshold: {$a->threshold} days)';
+$string['alert_reason_lowcompletion'] = 'Completion rate is {$a->completionrate}% (below the {$a->threshold}% threshold)';
+$string['alert_subject'] = 'Course Insights alert: {$a}';
+$string['alertcompletionthreshold'] = 'Completion rate alert threshold (%)';
+$string['alertcompletionthreshold_desc'] = 'Send an alert when a course completion rate drops below this percentage. Set to 0 to disable completion alerts.';
+$string['alertinactivedays'] = 'Inactivity alert threshold (days)';
+$string['alertinactivedays_desc'] = 'Send an alert when a course has had no student activity for this many days. Set to 0 to disable inactivity alerts.';
+$string['alertsenabled'] = 'Enable automated alerts';
+$string['alertsenabled_desc'] = 'When enabled, the daily alert task will notify editing teachers of courses that fall below the configured thresholds.';
+$string['alertsheading'] = 'Automated alerts';
 $string['allcategories'] = 'All categories';
+$string['allcohorts'] = 'All cohorts';
 $string['allcourses'] = 'All courses';
 $string['assignments'] = 'Assignments';
+$string['atrisk_col_course'] = 'Course';
+$string['atrisk_col_days'] = 'Days Inactive';
+$string['atrisk_col_lastaccess'] = 'Last Access';
+$string['atrisk_col_student'] = 'Student';
+$string['atrisk_heading'] = 'At-Risk Students';
+$string['atrisk_nodata'] = 'No at-risk students found for this threshold.';
 $string['avgquizgrade'] = 'Average quiz grade %';
+$string['backtodashboard'] = 'Back to dashboard';
+$string['brandaccentcolor'] = 'Accent colour';
+$string['brandaccentcolor_desc'] = 'Hex colour code (e.g. #6c5ce7) used as the primary colour for headings and highlights. Leave blank to use the default.';
+$string['brandheading'] = 'White-label / Branding';
+$string['brandlogourl'] = 'Logo URL';
+$string['brandlogourl_desc'] = 'URL of an image to display in the dashboard header. Leave blank to hide the logo.';
+$string['brandname'] = 'Site name override';
+$string['brandname_desc'] = 'Custom name shown in the dashboard header. Leave blank to use the default plugin name.';
 $string['buildsummarycache'] = 'Build Course Insights summary cache';
 $string['cachebuilt'] = 'Course Insights summary cache has been rebuilt.';
 $string['category'] = 'Category';
 $string['charttitle'] = 'Activity completion overview';
 $string['charttruncated'] = 'Chart shows the first 20 courses. Use the course filter to narrow results.';
+$string['cohort'] = 'Cohort';
+$string['col_activity'] = 'Activity';
+$string['col_avg'] = 'Avg';
+$string['col_completionpct'] = 'Completion %';
+$string['col_completions'] = 'Completions';
+$string['col_grade'] = 'Grade / Max';
+$string['col_lastaccess'] = 'Last Access';
+$string['col_max'] = 'Max';
+$string['col_min'] = 'Min';
+$string['col_modtype'] = 'Type';
+$string['col_passrate'] = 'Pass Rate';
+$string['col_quiz'] = 'Quiz';
+$string['col_quizattempts'] = 'Quiz Attempts';
+$string['col_quizstudents'] = 'Students';
+$string['col_rank'] = 'Rank';
+$string['col_score_pct'] = 'Score %';
+$string['col_student'] = 'Student';
+$string['col_submissions'] = 'Submissions';
+$string['compareperiod_end'] = 'Compare end date';
+$string['compareperiod_heading'] = 'Compare period';
+$string['compareperiod_start'] = 'Compare start date';
 $string['completionrate'] = 'Completion rate %';
+$string['contentbreakdown'] = 'Content Breakdown';
 $string['course'] = 'Course';
+$string['coursedetail'] = 'Course Detail';
 $string['courseinsights:export'] = 'Export Course Insights report';
 $string['courseinsights:manage'] = 'Manage Course Insights';
 $string['courseinsights:view'] = 'View Course Insights report';
+$string['coursesperpage'] = 'Courses per page';
+$string['coursesperpage_desc'] = 'Number of course cards shown per page on the dashboard. Default is 12. Set to 0 to use the default.';
 $string['dashboard'] = 'Course Insights Dashboard';
+$string['dashboardoverview'] = 'Dashboard Overview';
 $string['dateformathelp'] = 'Use YYYY-MM-DD, for example 2026-06-01';
 $string['dateformathelp_help'] = 'Enter the date in YYYY-MM-DD format, for example 2026-06-01. Leave blank to not filter by this date.';
 $string['datepreset_30days'] = 'Last 30 days';
 $string['datepreset_7days'] = 'Last 7 days';
 $string['datepreset_clear'] = 'Clear dates';
 $string['datepreset_thismonth'] = 'This month';
+$string['detailedreport'] = 'Detailed Report';
+$string['digest_subject'] = 'Course Insights — {$a} digest';
+$string['digestenabled'] = 'Enable scheduled digest emails';
+$string['digestenabled_desc'] = 'When enabled, a course summary digest will be sent to all users with the Course Insights manage capability at the configured frequency.';
+$string['digestfrequency'] = 'Digest frequency';
+$string['digestfrequency_desc'] = 'How often to send the digest email. The task runs daily and checks whether enough time has passed since the last send.';
+$string['digestfrequency_monthly'] = 'Monthly';
+$string['digestfrequency_weekly'] = 'Weekly';
+$string['digestheading'] = 'Scheduled digest emails';
 $string['enablecache'] = 'Enable summary cache';
 $string['enablecache_desc'] = 'When enabled, the dashboard can use cached all-time summary data for faster loading.';
 $string['enddate'] = 'End date';
+$string['engagementheatmap'] = 'Engagement Heatmap';
+$string['engagementheatmap_nodata'] = 'No activity log data available for this course.';
 $string['enrolledstudents'] = 'Enrolled students';
 $string['examattempts'] = 'Students with completed exams';
 $string['examkeywords'] = 'Exam keywords';
+$string['examkeywords_default'] = 'exam,final';
 $string['examkeywords_desc'] = 'Comma-separated words used to identify exams from quiz names. Example: exam,final';
 $string['exams'] = 'Exams';
 $string['exportcsv'] = 'Export CSV';
-$string['filter'] = 'Filter';
-$string['inactive'] = 'Inactive';
+$string['exportxlsx'] = 'Export Excel (.xlsx)';
+$string['filter'] = 'Apply filters';
 $string['filters'] = 'Filters';
+$string['forumactivities'] = 'Forum Activities';
+$string['gradedistribution'] = 'Grade Distribution';
+$string['gradedistribution_nodata'] = 'No grade data available for this course.';
+$string['healthscore'] = 'Health score: {$a}/100';
+$string['inactive'] = 'Inactive';
+$string['kpi_activeusers'] = 'Active Users (30 days)';
+$string['kpi_activitycompletions'] = 'Activity Completions';
+$string['kpi_coursecompletions'] = 'Course Completions';
+$string['kpi_enrolments'] = 'Active Enrolments';
+$string['kpi_newusers'] = 'New Registrations (30 days)';
+$string['kpi_totalcourses'] = 'Total Courses';
 $string['lastactivity'] = 'Last student activity';
+$string['lastactivitylabel'] = 'Last activity';
+$string['leaderboard'] = 'Top Students by Grade';
+$string['leaderboard_nodata'] = 'No grade data available for this course.';
+$string['license_activated'] = 'Licence activated successfully.';
+$string['license_domain'] = 'Domain';
+$string['license_expires'] = 'Expires';
+$string['license_grace_warning'] = 'Your Course Insights licence has expired. The plugin will stop working in {$a} days. Please renew at tandreig.com.';
+$string['license_invalid_key'] = 'Invalid licence key. Please check and try again.';
+$string['license_local_note'] = 'Activated locally — contact support if this persists.';
+$string['license_plan'] = 'Plan';
+$string['license_required'] = 'A valid Course Insights licence is required. Please enter your licence key in Site administration → Local plugins → Course Insights settings.';
+$string['license_server_unreachable'] = 'Could not reach the licence server. Please check your internet connection and try again.';
+$string['license_status_expired'] = 'Licence expired';
+$string['license_status_grace'] = 'Licence expired — grace period active';
+$string['license_status_unlicensed'] = 'No licence';
+$string['license_status_valid'] = 'Licence valid';
+$string['license_trial_local'] = 'Licence key saved (server unreachable — local fallback active).';
+$string['marketplace_notice'] = 'Downloaded this plugin from Moodle.org? A paid licence key is required to unlock all features. Keys are issued within 1 business day after your request. By installing and using this plugin you agree to our Terms & Conditions and Privacy Policy.';
 $string['miniexamkeywords'] = 'Mini exam keywords';
+$string['miniexamkeywords_default'] = 'mini,mini exam';
 $string['miniexamkeywords_desc'] = 'Comma-separated words used to identify mini exams from quiz names. Example: mini,mini exam';
 $string['miniquizattempts'] = 'Students with completed mini exams';
 $string['miniquizzes'] = 'Mini exams';
+$string['modulefunnel'] = 'Activity Completion Funnel';
+$string['modulefunnel_nodata'] = 'No activities with completion tracking are configured in this course.';
+$string['monthly_col_activeusers'] = 'Active Users';
+$string['monthly_col_events'] = 'Total Events';
+$string['monthly_col_month'] = 'Month';
+$string['monthly_trend_label'] = 'Monthly Activity Trend (12 months)';
 $string['norecords'] = 'No courses found matching the selected filters.';
 $string['pagination_info'] = 'Showing {$a->from} to {$a->to} of {$a->total} courses';
 $string['pluginname'] = 'Course Insights';
+$string['presetdelete'] = 'Delete';
+$string['presetname'] = 'Preset name';
+$string['presets'] = 'Saved presets';
+$string['presetsave'] = 'Save preset';
+$string['printreport'] = 'Print / PDF';
 $string['privacy:metadata'] = 'The Course Insights plugin reads existing Moodle data and stores only aggregated course-level summary data.';
 $string['quizattempts'] = 'Students with completed quiz attempts';
+$string['quizbreakdown'] = 'Quiz Score Breakdown';
+$string['quizbreakdown_nodata'] = 'No quiz grade data available for this course.';
 $string['quizzes'] = 'Quizzes / exams';
+$string['resetfilters'] = 'Reset filters';
+$string['settings_license'] = 'Licence';
+$string['settings_license_desc'] = 'Enter the licence key provided after purchase. The key is validated against tandreig.com and tied to this site\'s domain.';
+$string['settings_license_key'] = 'Licence key';
+$string['settings_license_key_desc'] = 'Paste the key exactly as received. Saving this field triggers immediate activation.';
 $string['settingspage'] = 'Course Insights settings';
+$string['sitecachebuilt'] = 'Course Insights site KPI cache has been rebuilt.';
 $string['startdate'] = 'Start date';
 $string['stat_attempts'] = 'Attempts';
 $string['stat_courses'] = 'Courses';
 $string['stat_students'] = 'Students';
 $string['stat_submissions'] = 'Submissions';
+$string['studentactivitytable'] = 'Student Activity';
+$string['studentactivitytable_nodata'] = 'No students enrolled in this course.';
+$string['studentinactivitydays'] = 'Student inactivity threshold (days)';
+$string['studentinactivitydays_desc'] = 'Send a reminder to students who have not accessed an enrolled course for this many days. The same student+course pair will not be reminded again until another full period passes. Set to 0 to disable.';
+$string['studentreminder_body'] = 'Hi {$a->firstname},
+
+We noticed you haven\'t visited the following course(s) in the last {$a->inactivedays} days:
+
+{$a->courselist}
+
+Jump back in and keep up the great work!
+
+{$a->siteurl}';
+$string['studentreminder_html_cta'] = 'Jump back in and keep up the great work!';
+$string['studentreminder_html_intro'] = 'Hi {$a->firstname}, we noticed you haven\'t visited the following course(s) in the last {$a->inactivedays} days:';
+$string['studentreminder_subject'] = 'Don\'t forget to continue your learning!';
+$string['studentreminderenabled'] = 'Enable student inactivity reminders';
+$string['studentreminderenabled_desc'] = 'When enabled, the nightly task will email students who have not accessed an enrolled course for the configured number of days.';
+$string['studentreminderheading'] = 'Student inactivity reminders';
 $string['studentroleids'] = 'Student role IDs';
+$string['studentroleids_default'] = '5,11,25';
 $string['studentroleids_desc'] = 'Comma-separated Moodle role IDs to include in reports. Example: 5,11,25';
 $string['studentstatus'] = 'Student status';
 $string['studentstatus_active'] = 'Active students';
 $string['studentstatus_all'] = 'All students';
 $string['studentstatus_suspended'] = 'Suspended students';
+$string['submissiontimeline'] = 'Assignment Submission Timeline';
+$string['submissiontimeline_nodata'] = 'No assignment submissions in the last 30 days.';
 $string['submittedassignments'] = 'Students with assignment submissions';
+$string['tab_dashboard'] = 'Dashboard';
+$string['tab_sitekpis'] = 'Site Overview';
+$string['tab_userreport'] = 'User Report';
+$string['task_renew_license'] = 'Course Insights: renew licence token';
+$string['task_send_alerts'] = 'Send Course Insights alerts';
+$string['task_send_digest'] = 'Send Course Insights digest email';
+$string['task_send_student_reminders'] = 'Course Insights: send student inactivity reminders';
 $string['teachers'] = 'Teachers';
-
-
-
+$string['top10_completion'] = 'Top 10 by Completion Rate';
+$string['top10_enrolment'] = 'Top 10 by Enrolment';
+$string['totalassignments'] = 'Total Assignments';
+$string['totalquizzes'] = 'Total Quizzes';
+$string['trend_active'] = 'Active students';
+$string['trend_heading'] = '30-day Trend Comparison';
+$string['trend_quiz'] = 'Quiz attempts';
+$string['trend_subs'] = 'Submissions';
+$string['trend_vs'] = 'vs previous period';
 $string['usecache'] = 'Use summary cache where possible';
-$string['examkeywords_default'] = 'exam,final';
-$string['miniexamkeywords_default'] = 'mini,mini exam';
-$string['studentroleids_default'] = '5,11,25';
+$string['userreport_col_course'] = 'Course';
+$string['userreport_col_grade'] = 'Grade';
+$string['userreport_col_lastaccess'] = 'Last Access';
+$string['userreport_col_status'] = 'Status';
+$string['userreport_heading'] = 'User Progress Report';
+$string['userreport_nodata'] = 'No enrolled courses found for this user.';
+$string['userreport_noselection'] = 'Select a user...';
+$string['userreport_searchlabel'] = 'Search user';
+$string['userreport_searchplaceholder'] = 'Type a name or email address...';
+$string['userreport_selectprompt'] = 'Search for a user above to view their course progress.';
+$string['userstatus_completed'] = 'Completed';
+$string['userstatus_inprogress'] = 'In progress';
+$string['userstatus_notstarted'] = 'Not started';
+
+
+
+$string['webhookapikey'] = 'Webhook API key';
+$string['webhookapikey_desc'] = 'Optional Bearer token sent in the Authorization header. Leave blank to send unauthenticated requests.';
+$string['webhookfailed'] = 'Webhook failed (HTTP {$a->httpcode}): {$a->error}';
+$string['webhookheading'] = 'LMS data push (webhook)';
+$string['webhooksent'] = 'Webhook sent successfully (HTTP {$a}).';
+$string['webhookskipped'] = 'Webhook skipped: no URL configured.';
+$string['webhookurl'] = 'Webhook URL';
+$string['webhookurl_desc'] = 'URL to receive a POST request with JSON course overview data after each nightly cache rebuild. Leave blank to disable.';

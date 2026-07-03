@@ -41,41 +41,60 @@ class filter_form extends \moodleform {
     public function definition(): void {
         $mform = $this->_form;
 
-        $courses = $this->_customdata['courses'] ?? [];
+        $courseoption = $this->_customdata['courseoption'] ?? [];
         $categories = $this->_customdata['categories'] ?? [];
+        $cohorts = $this->_customdata['cohorts'] ?? [];
 
-        $mform->addElement('header', 'filtersheader', get_string('filters', 'local_courseinsights'));
+        if (count($cohorts) > 1) {
+            $mform->addElement('select', 'cohortid', get_string('cohort', 'local_courseinsights'), $cohorts);
+            $mform->setType('cohortid', PARAM_INT);
+            $mform->setDefault('cohortid', 0);
+        }
 
         $mform->addElement('select', 'categoryid', get_string('category', 'local_courseinsights'), $categories);
         $mform->setType('categoryid', PARAM_INT);
         $mform->setDefault('categoryid', 0);
 
-        $mform->addElement('select', 'courseid', get_string('course', 'local_courseinsights'), $courses);
+        $mform->addElement('autocomplete', 'courseid', get_string('course', 'local_courseinsights'), $courseoption, [
+            'ajax'              => 'local_courseinsights/course_selector',
+            'noselectionstring' => get_string('allcourses', 'local_courseinsights'),
+            'placeholder'       => get_string('allcourses', 'local_courseinsights'),
+        ]);
         $mform->setType('courseid', PARAM_INT);
         $mform->setDefault('courseid', 0);
 
-        $mform->addElement('text', 'startdate', get_string('startdate', 'local_courseinsights'));
+        $mform->addElement(
+            'text',
+            'startdate',
+            get_string('startdate', 'local_courseinsights'),
+            ['placeholder' => 'YYYY-MM-DD', 'class' => 'ci-date-input']
+        );
         $mform->setType('startdate', PARAM_TEXT);
         $mform->addHelpButton('startdate', 'dateformathelp', 'local_courseinsights');
 
-        $mform->addElement('text', 'enddate', get_string('enddate', 'local_courseinsights'));
+        $mform->addElement(
+            'text',
+            'enddate',
+            get_string('enddate', 'local_courseinsights'),
+            ['placeholder' => 'YYYY-MM-DD', 'class' => 'ci-date-input']
+        );
         $mform->setType('enddate', PARAM_TEXT);
         $mform->addHelpButton('enddate', 'dateformathelp', 'local_courseinsights');
 
         $presetbuttons =
             \html_writer::tag('button', get_string('datepreset_7days', 'local_courseinsights'), [
                 'type' => 'button',
-                'class' => 'btn btn-sm btn-outline-secondary me-1 local-courseinsights-date-preset',
+                'class' => 'btn btn-sm btn-outline-secondary local-courseinsights-date-preset',
                 'data-ci-preset' => '7days',
             ]) .
             \html_writer::tag('button', get_string('datepreset_30days', 'local_courseinsights'), [
                 'type' => 'button',
-                'class' => 'btn btn-sm btn-outline-secondary me-1 local-courseinsights-date-preset',
+                'class' => 'btn btn-sm btn-outline-secondary local-courseinsights-date-preset',
                 'data-ci-preset' => '30days',
             ]) .
             \html_writer::tag('button', get_string('datepreset_thismonth', 'local_courseinsights'), [
                 'type' => 'button',
-                'class' => 'btn btn-sm btn-outline-secondary me-1 local-courseinsights-date-preset',
+                'class' => 'btn btn-sm btn-outline-secondary local-courseinsights-date-preset',
                 'data-ci-preset' => 'thismonth',
             ]) .
             \html_writer::tag('button', get_string('datepreset_clear', 'local_courseinsights'), [
@@ -83,7 +102,31 @@ class filter_form extends \moodleform {
                 'class' => 'btn btn-sm btn-outline-danger local-courseinsights-date-preset',
                 'data-ci-preset' => 'clear',
             ]);
-        $mform->addElement('html', \html_writer::div($presetbuttons, 'local-courseinsights-date-presets mb-2'));
+        $mform->addElement('html', \html_writer::div(
+            \html_writer::div($presetbuttons, 'ci-presets-grid'),
+            'local-courseinsights-date-presets mb-2'
+        ));
+
+        $mform->addElement('header', 'compareheader', get_string('compareperiod_heading', 'local_courseinsights'));
+        $mform->setExpanded('compareheader', false);
+
+        $mform->addElement(
+            'text',
+            'compare_startdate',
+            get_string('compareperiod_start', 'local_courseinsights'),
+            ['placeholder' => 'YYYY-MM-DD', 'class' => 'ci-date-input']
+        );
+        $mform->setType('compare_startdate', PARAM_TEXT);
+        $mform->addHelpButton('compare_startdate', 'dateformathelp', 'local_courseinsights');
+
+        $mform->addElement(
+            'text',
+            'compare_enddate',
+            get_string('compareperiod_end', 'local_courseinsights'),
+            ['placeholder' => 'YYYY-MM-DD', 'class' => 'ci-date-input']
+        );
+        $mform->setType('compare_enddate', PARAM_TEXT);
+        $mform->addHelpButton('compare_enddate', 'dateformathelp', 'local_courseinsights');
 
         $activitytypes = [
             'all' => get_string('activitytype_all', 'local_courseinsights'),
@@ -108,6 +151,8 @@ class filter_form extends \moodleform {
         $mform->setDefault('studentstatus', 'active');
 
         if (get_config('local_courseinsights', 'enablecache')) {
+            $mform->addElement('header', 'advancedheader', get_string('advanced_options', 'local_courseinsights'));
+            $mform->setExpanded('advancedheader', false);
             $mform->addElement('advcheckbox', 'usecache', get_string('usecache', 'local_courseinsights'));
             $mform->setType('usecache', PARAM_BOOL);
             $mform->setDefault('usecache', 0);
@@ -120,5 +165,15 @@ class filter_form extends \moodleform {
         $mform->setType('sortdir', PARAM_ALPHA);
 
         $this->add_action_buttons(false, get_string('filter', 'local_courseinsights'));
+
+        $reseturl = $this->_form->getAttribute('action');
+        $mform->addElement('html', \html_writer::tag(
+            'a',
+            get_string('resetfilters', 'local_courseinsights'),
+            [
+                'href'  => $reseturl ?: '#',
+                'class' => 'ci-reset-btn',
+            ]
+        ));
     }
 }

@@ -1,0 +1,98 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+    @package    local_courseinsights
+    @copyright  2026 Andrei Toma
+    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+{{!
+    User progress report: per-course progress table for a selected user.
+
+    @template local_courseinsights/user_report
+
+    Context variables required for this template:
+    * hasuserselected {boolean} Whether a user has been selected.
+    * selectedfullname {string} Full name of the selected user.
+    * hasprogress {boolean} Whether the user has enrolment data.
+    * col_course {string} Column header label.
+    * col_status {string} Column header label.
+    * col_lastaccess {string} Column header label.
+    * col_grade {string} Column header label.
+    * selectprompt {string} Message shown when no user is selected.
+    * nodata {string} Message shown when user has no enrolments.
+    * userprogress {array} courseurl, coursename, status, statuslabel, lastaccessfmt, grade
+
+    Example context (json):
+    {
+        "hasuserselected": true,
+        "selectedfullname": "Jane Smith",
+        "hasprogress": true,
+        "col_course": "Course",
+        "col_status": "Status",
+        "col_lastaccess": "Last access",
+        "col_grade": "Grade",
+        "selectprompt": "Please select a user to view their progress.",
+        "nodata": "No enrolments found for this user.",
+        "userprogress": [
+            {
+                "courseurl": "/course/view.php?id=2",
+                "coursename": "Introduction to PHP",
+                "status": "completed",
+                "statuslabel": "Completed",
+                "lastaccessfmt": "2026-06-15",
+                "grade": "87.50 / 100.00"
+            }
+        ]
+    }
+}}
+{{#hasuserselected}}
+<div class="ci-chart-card ci-chart-card--wide">
+    <h3 class="ci-chart-title">{{selectedfullname}}</h3>
+    {{#hasprogress}}
+    <table class="ci-top10-table ci-userreport-table">
+        <thead>
+            <tr>
+                <th>{{col_course}}</th>
+                <th class="ci-top10-value">{{col_status}}</th>
+                <th class="ci-top10-value">{{col_lastaccess}}</th>
+                <th class="ci-top10-value">{{col_grade}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#userprogress}}
+            <tr>
+                <td><a href="{{courseurl}}">{{coursename}}</a></td>
+                <td class="ci-top10-value">
+                    <span class="ci-status-badge ci-status-badge--{{status}}">{{statuslabel}}</span>
+                </td>
+                <td class="ci-top10-value">{{lastaccessfmt}}</td>
+                <td class="ci-top10-value">{{grade}}</td>
+            </tr>
+            {{/userprogress}}
+        </tbody>
+    </table>
+    {{/hasprogress}}
+    {{^hasprogress}}
+    <p class="ci-nodata">{{nodata}}</p>
+    {{/hasprogress}}
+</div>
+{{/hasuserselected}}
+
+{{^hasuserselected}}
+<div class="ci-chart-card ci-chart-card--wide">
+    <p class="ci-nodata">{{selectprompt}}</p>
+</div>
+{{/hasuserselected}}
