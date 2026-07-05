@@ -37,7 +37,6 @@ namespace local_courseinsights;
  *   expires_at   int     Unix timestamp when token expires
  *   grace_until  int     Unix timestamp end of grace period (expires_at + 7 days)
  *   activated_at int     Unix timestamp of first activation
- *   local        bool    true = activated locally (license server not yet reachable)
  */
 class license {
     /** Remote activation endpoint. */
@@ -108,7 +107,7 @@ class license {
      * Activate a license key.
      *
      * Calls the remote activation API. On success stores the token. If the server
-     * is unreachable, falls back to a local 60-day trial token so testing is not blocked.
+     * is unreachable, activation fails and the admin must retry later.
      *
      * @param string $key License key entered by the admin.
      * @return array ['success' => bool, 'message' => string]

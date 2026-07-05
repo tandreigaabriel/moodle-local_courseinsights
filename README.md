@@ -86,7 +86,7 @@ Course Insights is a **commercial plugin** distributed under the GNU GPL v3.
 
 A licence key is required to use the plugin. Course Insights is purchased through Moodle Marketplace; licence keys are issued after the Marketplace purchase has been verified.
 
-After purchasing through Moodle Marketplace, submit the post-purchase licence delivery form at `https://tandreig.com/request-key`. This form is not a separate purchase path; it is used only to match the Marketplace purchase to the customer's Moodle site and delivery email. The form asks for the plugin name, full name, institution or organisation, email address, Moodle site URL, and an optional message. The licence key is sent to the email address provided after the Marketplace payment is confirmed.
+After purchasing through Moodle Marketplace, submit the post-purchase licence delivery form at [tandreig.com/request-key](https://tandreig.com/request-key). This form is not a separate purchase path; it is used only to match the Marketplace purchase to the customer's Moodle site and delivery email. The form asks for the plugin name, full name, institution or organisation, email address, Moodle site URL, and an optional message. The licence key is sent to the email address provided after the Marketplace payment is confirmed.
 
 Once you receive your key, enter it in **Site administration → Plugins → Local plugins → Course Insights settings → Licence Key** and save. Activation is automatic; no manual steps are needed after that.
 
@@ -216,6 +216,10 @@ Check that the Student role IDs setting matches the role IDs on your site. The d
 **Licence not activating**
 Make sure your server can make outbound HTTPS requests to `tandreig.com`. Check **Site administration → Server → HTTP** for any proxy settings that may be blocking outbound connections.
 
+If the key was requested but has not arrived, use the post-purchase licence delivery form at [tandreig.com/request-key](https://tandreig.com/request-key) and include the same email address and Moodle site URL used for the Marketplace purchase verification.
+
+For installation, configuration, or plugin usage help, use the plugin support form at [tandreig.com/plugins/support](https://tandreig.com/plugins/support).
+
 ---
 
 ## Privacy
@@ -248,6 +252,8 @@ The plugin has been adjusted for Moodle review feedback:
 
 ## Support
 
+- **Plugin support form:** [tandreig.com/plugins/support](https://tandreig.com/plugins/support)
+- **Licence key delivery form:** [tandreig.com/request-key](https://tandreig.com/request-key) — use this only after a Moodle Marketplace purchase so the purchase can be verified and matched to the Moodle site URL
 - **Bug reports & feature requests:** [github.com/tandreigaabriel/moodle-local_courseinsights/issues](https://github.com/tandreigaabriel/moodle-local_courseinsights/issues)
 - **Developed and maintained by:** TAG Web Design — Andrei Toma
 
@@ -265,6 +271,7 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 - Filter sidebar is now organised into numbered steps: courses, main date range, optional comparison period, and activity/student scope
 - Main and comparison date labels were renamed to make it clearer which period controls the dashboard and which period is only the baseline
 - README now documents the Moodle review fixes, including portable log aggregation, Marketplace-first licence delivery, Privacy API coverage, Moodle curl usage, and missing language strings
+- README now separates the plugin support form from the post-purchase licence key delivery form
 
 ### 0.46.9
 - Compare Period filter section now uses plugin-owned `<details>/<summary>` markup instead of Moodle's default collapsible form header, so the visible button style changes consistently across themes
