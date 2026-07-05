@@ -34,11 +34,7 @@ use core_privacy\local\request\writer;
 /**
  * Privacy provider for reminder records stored by Course Insights.
  */
-class provider implements
-        \core_privacy\local\metadata\provider,
-        \core_privacy\local\request\plugin\provider,
-        \core_privacy\local\request\core_userlist_provider {
-
+class provider implements \core_privacy\local\metadata\provider, \core_privacy\local\request\core_userlist_provider, \core_privacy\local\request\plugin\provider {
     /**
      * Returns metadata about personal data stored by this plugin.
      *
