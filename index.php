@@ -94,6 +94,7 @@ $mform = new \local_courseinsights\form\filter_form($url, [
     'cohorts'      => $cohorts,
     'courseoption' => $courseoption,
     'categories'   => $categories,
+    'compareopen'  => trim($filters['compare_startdate'] ?? '') !== '' || trim($filters['compare_enddate'] ?? '') !== '',
 ], 'get');
 
 $formdata = $filters;
@@ -178,6 +179,7 @@ if ($hascompare) {
         return [
             'hasdelta'     => $compare > 0,
             'comparevalue' => $compare,
+            'comparetext'  => get_string('comparepreviousvalue', 'local_courseinsights', $compare),
             'pct'          => abs($pct),
             'isup'         => $pct > 0,
             'isdown'       => $pct < 0,

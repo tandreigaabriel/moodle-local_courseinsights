@@ -48,26 +48,30 @@ if (
 
 $atriskdays = max(1, (int) get_config('local_courseinsights', 'studentinactivitydays') ?: 14);
 
-$cache    = \cache::make('local_courseinsights', 'site_kpis');
-$cachekey = 'site_overview_' . $atriskdays;
-$cached   = $cache->get($cachekey);
+$cached = \local_courseinsights\report_service::get_site_overview_snapshot($atriskdays);
+$snapshotmissing = $cached === null;
 
-if ($cached === false) {
+if ($snapshotmissing) {
     $cached = [
-        'kpis'         => \local_courseinsights\report_service::get_site_kpis(),
-        'topenrol'     => \local_courseinsights\report_service::get_top_courses_by_enrolment(10),
-        'topcompl'     => \local_courseinsights\report_service::get_top_courses_by_completion(10),
-        'monthlytrend' => \local_courseinsights\report_service::get_monthly_active_users(12),
-        'atrisk'       => \local_courseinsights\report_service::get_atrisk_students($atriskdays, 25),
+        'kpis' => [
+            'kpi_totalcourses' => 0,
+            'kpi_enrolments' => 0,
+            'kpi_coursecompletions' => 0,
+            'kpi_activitycompletions' => 0,
+            'kpi_newusers' => 0,
+            'kpi_activeusers' => 0,
+        ],
+        'topenrol' => [],
+        'topcompl' => [],
+        'monthlytrend' => [],
     ];
-    $cache->set($cachekey, $cached);
 }
 
 $kpis         = $cached['kpis'];
 $topenrol     = $cached['topenrol'];
 $topcompl     = $cached['topcompl'];
 $monthlytrend = $cached['monthlytrend'];
-$atrisk       = $cached['atrisk'];
+$atrisk       = $snapshotmissing ? [] : \local_courseinsights\report_service::get_atrisk_students_from_snapshot($atriskdays, 25);
 
 $brandaccent  = (string) get_config('local_courseinsights', 'brandaccentcolor');
 $brandlogourl = (string) get_config('local_courseinsights', 'brandlogourl');
@@ -135,6 +139,10 @@ echo html_writer::tag('a', get_string('tab_userreport', 'local_courseinsights'),
     'class' => 'ci-tab',
 ]);
 echo html_writer::end_div();
+
+if ($snapshotmissing) {
+    echo $OUTPUT->notification(get_string('sitecachepending', 'local_courseinsights'), 'info');
+}
 
 echo $OUTPUT->render_from_template('local_courseinsights/site_kpis', $templatecontext);
 

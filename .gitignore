@@ -1,4 +1,4 @@
-issue.md
+
 features.md
 features1.md
 paid.md
@@ -6,4 +6,15 @@ tests.md
 tests
 features.md
 features1.md
+issue.md
+
+# Private local development files. Never ship license bypasses, local patches,
+# test keys, or environment overrides with the Marketplace package.
+.env
+.env.*
+*.local.php
+*.dev.php
+local-dev.php
+courseinsights-dev.php
+dev-bypass.patch
 issue.md

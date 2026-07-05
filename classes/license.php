@@ -38,9 +38,6 @@ namespace local_courseinsights;
  *   grace_until  int     Unix timestamp end of grace period (expires_at + 7 days)
  *   activated_at int     Unix timestamp of first activation
  *   local        bool    true = activated locally (license server not yet reachable)
- *
- * To bypass all license checks during development, add to Moodle's config.php:
- *   define('COURSEINSIGHTS_LICENSE_DEV', true);
  */
 class license {
     /** Remote activation endpoint. */
@@ -70,10 +67,6 @@ class license {
      * @return string One of the STATUS_* constants.
      */
     public static function get_status() {
-        if (defined('COURSEINSIGHTS_LICENSE_DEV') && COURSEINSIGHTS_LICENSE_DEV) {
-            return self::STATUS_VALID;
-        }
-
         $tokenjson = get_config('local_courseinsights', 'license_token');
         if (empty($tokenjson)) {
             return self::STATUS_UNLICENSED;
@@ -196,32 +189,26 @@ class license {
      * @return object|null
      */
     private static function http_post($url, $jsonbody) {
-        if (!function_exists('curl_init')) {
-            return null;
-        }
-        $curl = curl_init($url);
-        if (!$curl) {
-            return null;
-        }
-        curl_setopt_array($curl, [
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $jsonbody,
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            CURLOPT_USERAGENT      => 'Moodle/local_courseinsights',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 10,
+        global $CFG;
+
+        require_once($CFG->libdir . '/filelib.php');
+
+        $curl = new \curl();
+        $curl->setHeader([
+            'Content-Type: application/json',
+            'Accept: application/json',
+        ]);
+        $curl->setopt([
+            CURLOPT_USERAGENT => 'Moodle/local_courseinsights',
+            CURLOPT_TIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
-        $raw = curl_exec($curl);
-        $err = curl_errno($curl);
-        $errmsg = curl_error($curl);
-        curl_close($curl);
-        if ($err || !$raw) {
+
+        $raw = $curl->post($url, $jsonbody);
+        if (!empty($curl->error) || !$raw) {
             return null;
         }
+
         return json_decode($raw);
     }
 }

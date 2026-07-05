@@ -66,8 +66,8 @@ class send_student_reminders extends \core\task\scheduled_task {
         // Ordered by userid so we can stream and group without loading everything into memory at once.
         $sql = "SELECT u.id AS userid,
                        c.id AS courseid, c.fullname AS coursefullname,
-                       COALESCE(la.timeaccess, 0) AS lastaccess,
-                       r.id AS reminderid
+                       MAX(COALESCE(la.timeaccess, 0)) AS lastaccess,
+                       MAX(r.id) AS reminderid
                   FROM {enrol} e
                   JOIN {user_enrolments} ue ON ue.enrolid = e.id AND ue.status = 0
                   JOIN {user} u
@@ -85,8 +85,9 @@ class send_student_reminders extends \core\task\scheduled_task {
                          ON r.userid = ue.userid AND r.courseid = e.courseid
                  WHERE e.status = 0
                    AND cc.userid IS NULL
-                   AND (la.timeaccess IS NULL OR la.timeaccess < :cutoff)
                    AND (r.timereminded IS NULL OR r.timereminded < :remindercut)
+                 GROUP BY u.id, c.id, c.fullname
+                   HAVING MAX(COALESCE(la.timeaccess, 0)) < :cutoff
                  ORDER BY u.id, c.id";
 
         $params = [

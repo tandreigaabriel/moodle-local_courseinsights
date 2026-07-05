@@ -24,18 +24,267 @@
 
 namespace local_courseinsights\privacy;
 
+use core_privacy\local\metadata\collection;
+use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\approved_userlist;
+use core_privacy\local\request\contextlist;
+use core_privacy\local\request\userlist;
+use core_privacy\local\request\writer;
+
 /**
- * Null privacy provider because this plugin stores only aggregated,
- * non-personal course-level summary data.
+ * Privacy provider for reminder records stored by Course Insights.
  */
-class provider implements \core_privacy\local\metadata\null_provider {
+class provider implements
+        \core_privacy\local\metadata\provider,
+        \core_privacy\local\request\plugin\provider,
+        \core_privacy\local\request\core_userlist_provider {
+
     /**
-     * Returns the language string identifier explaining why this plugin
-     * stores no personal data.
+     * Returns metadata about personal data stored by this plugin.
      *
-     * @return string
+     * @param collection $collection Metadata collection.
+     * @return collection Updated metadata collection.
      */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection): collection {
+        $collection->add_database_table(
+            'local_courseinsights_reminders',
+            [
+                'userid' => 'privacy:metadata:reminders:userid',
+                'courseid' => 'privacy:metadata:reminders:courseid',
+                'timereminded' => 'privacy:metadata:reminders:timereminded',
+            ],
+            'privacy:metadata:reminders'
+        );
+
+        $collection->add_database_table(
+            'local_courseinsights_atrisk',
+            [
+                'userid' => 'privacy:metadata:atrisk:userid',
+                'courseid' => 'privacy:metadata:atrisk:courseid',
+                'threshold' => 'privacy:metadata:atrisk:threshold',
+                'lastaccess' => 'privacy:metadata:atrisk:lastaccess',
+                'daysinactive' => 'privacy:metadata:atrisk:daysinactive',
+                'timemodified' => 'privacy:metadata:atrisk:timemodified',
+            ],
+            'privacy:metadata:atrisk'
+        );
+
+        return $collection;
+    }
+
+    /**
+     * Gets the contexts containing Course Insights data for the supplied user.
+     *
+     * @param int $userid User ID.
+     * @return contextlist Context list.
+     */
+    public static function get_contexts_for_userid(int $userid): contextlist {
+        $contextlist = new contextlist();
+        $contextlist->add_from_sql(
+            "SELECT ctx.id
+               FROM {context} ctx
+               JOIN {local_courseinsights_reminders} cir ON cir.courseid = ctx.instanceid
+              WHERE ctx.contextlevel = :contextlevel
+                AND cir.userid = :userid",
+            [
+                'contextlevel' => CONTEXT_COURSE,
+                'userid' => $userid,
+            ]
+        );
+        $contextlist->add_from_sql(
+            "SELECT ctx.id
+               FROM {context} ctx
+               JOIN {local_courseinsights_atrisk} cia ON cia.courseid = ctx.instanceid
+              WHERE ctx.contextlevel = :contextlevel
+                AND cia.userid = :userid",
+            [
+                'contextlevel' => CONTEXT_COURSE,
+                'userid' => $userid,
+            ]
+        );
+
+        return $contextlist;
+    }
+
+    /**
+     * Exports Course Insights data for the approved contexts.
+     *
+     * @param approved_contextlist $contextlist Approved context list.
+     * @return void
+     */
+    public static function export_user_data(approved_contextlist $contextlist): void {
+        global $DB;
+
+        $userid = $contextlist->get_user()->id;
+        foreach ($contextlist->get_contexts() as $context) {
+            if (!$context instanceof \context_course) {
+                continue;
+            }
+
+            $records = $DB->get_records(
+                'local_courseinsights_reminders',
+                [
+                    'userid' => $userid,
+                    'courseid' => $context->instanceid,
+                ],
+                'timereminded ASC'
+            );
+
+            if (!empty($records)) {
+                $data = [];
+                foreach ($records as $record) {
+                    $data[] = (object) [
+                        'courseid' => (int) $record->courseid,
+                        'timereminded' => (int) $record->timereminded,
+                        'timeremindedformatted' => userdate((int) $record->timereminded),
+                    ];
+                }
+
+                writer::with_context($context)->export_data(
+                    [get_string('privacy:reminders', 'local_courseinsights')],
+                    (object) ['reminders' => $data]
+                );
+            }
+
+            $atriskrecords = $DB->get_records(
+                'local_courseinsights_atrisk',
+                [
+                    'userid' => $userid,
+                    'courseid' => $context->instanceid,
+                ],
+                'threshold ASC'
+            );
+
+            if (empty($atriskrecords)) {
+                continue;
+            }
+
+            $atriskdata = [];
+            foreach ($atriskrecords as $record) {
+                $atriskdata[] = (object) [
+                    'courseid' => (int) $record->courseid,
+                    'threshold' => (int) $record->threshold,
+                    'lastaccess' => (int) $record->lastaccess,
+                    'lastaccessformatted' => !empty($record->lastaccess) ? userdate((int) $record->lastaccess) : '',
+                    'daysinactive' => $record->daysinactive !== null ? (int) $record->daysinactive : null,
+                    'timemodified' => (int) $record->timemodified,
+                    'timemodifiedformatted' => userdate((int) $record->timemodified),
+                ];
+            }
+
+            writer::with_context($context)->export_data(
+                [get_string('privacy:atrisk', 'local_courseinsights')],
+                (object) ['atrisk' => $atriskdata]
+            );
+        }
+    }
+
+    /**
+     * Deletes Course Insights data for all users in a context.
+     *
+     * @param \context $context Context to delete from.
+     * @return void
+     */
+    public static function delete_data_for_all_users_in_context(\context $context): void {
+        global $DB;
+
+        if (!$context instanceof \context_course) {
+            return;
+        }
+
+        $DB->delete_records('local_courseinsights_reminders', ['courseid' => $context->instanceid]);
+        $DB->delete_records('local_courseinsights_atrisk', ['courseid' => $context->instanceid]);
+    }
+
+    /**
+     * Deletes Course Insights data for a user in approved contexts.
+     *
+     * @param approved_contextlist $contextlist Approved context list.
+     * @return void
+     */
+    public static function delete_data_for_user(approved_contextlist $contextlist): void {
+        global $DB;
+
+        $userid = $contextlist->get_user()->id;
+        foreach ($contextlist->get_contexts() as $context) {
+            if ($context instanceof \context_course) {
+                $DB->delete_records(
+                    'local_courseinsights_reminders',
+                    [
+                        'userid' => $userid,
+                        'courseid' => $context->instanceid,
+                    ]
+                );
+                $DB->delete_records(
+                    'local_courseinsights_atrisk',
+                    [
+                        'userid' => $userid,
+                        'courseid' => $context->instanceid,
+                    ]
+                );
+            }
+        }
+    }
+
+    /**
+     * Adds users with Course Insights data in the supplied context.
+     *
+     * @param userlist $userlist User list.
+     * @return void
+     */
+    public static function get_users_in_context(userlist $userlist): void {
+        $context = $userlist->get_context();
+        if (!$context instanceof \context_course) {
+            return;
+        }
+
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT userid
+               FROM {local_courseinsights_reminders}
+              WHERE courseid = :courseid",
+            ['courseid' => $context->instanceid]
+        );
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT userid
+               FROM {local_courseinsights_atrisk}
+              WHERE courseid = :courseid",
+            ['courseid' => $context->instanceid]
+        );
+    }
+
+    /**
+     * Deletes Course Insights data for approved users in a context.
+     *
+     * @param approved_userlist $userlist Approved user list.
+     * @return void
+     */
+    public static function delete_data_for_users(approved_userlist $userlist): void {
+        global $DB;
+
+        $context = $userlist->get_context();
+        if (!$context instanceof \context_course) {
+            return;
+        }
+
+        $userids = $userlist->get_userids();
+        if (empty($userids)) {
+            return;
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $params['courseid'] = $context->instanceid;
+
+        $DB->delete_records_select(
+            'local_courseinsights_reminders',
+            "courseid = :courseid AND userid {$insql}",
+            $params
+        );
+        $DB->delete_records_select(
+            'local_courseinsights_atrisk',
+            "courseid = :courseid AND userid {$insql}",
+            $params
+        );
     }
 }

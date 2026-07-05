@@ -72,7 +72,7 @@ class report_service {
         'course'               => 'c.fullname',
         'enrolledstudents'     => 'enrolledstudents',
         'completionrate'       => 'completionrate',
-        'teachers'             => 'teachers',
+        'teachers'             => 'c.fullname',
         'assignments'          => 'assignments',
         'submittedassignments' => 'submittedassignments',
         'quizzes'              => 'quizzes',
@@ -350,8 +350,6 @@ class report_service {
         for ($i = 1; $i <= 8; $i++) {
             $params["ctx{$i}"] = CONTEXT_COURSE;
         }
-        $params['ctxteacher'] = CONTEXT_COURSE;
-
         $where = 'c.id <> :sitecourse AND c.visible = 1';
 
         if ($courseid > 0) {
@@ -437,7 +435,6 @@ class report_service {
         $filtera   = '';
         $filterq   = '';
         $filterla  = '';
-        $filterctx = '';
         $limitfrom = $perpage > 0 ? $page * $perpage : 0;
         $limitnum  = $perpage > 0 ? $perpage : 0;
 
@@ -495,7 +492,6 @@ class report_service {
             $filtera   = " AND a.course {$inlistsql}";
             $filterq   = " AND q.course {$inlistsql}";
             $filterla  = " AND la.courseid {$inlistsql}";
-            $filterctx = " AND ctx.instanceid {$inlistsql}";
         } else if ($perpage > 0) {
             self::$lasttotalcount = self::get_course_count($filters);
         }
@@ -516,7 +512,7 @@ class report_service {
                 COALESCE(matt.miniquizattempts, 0)      AS miniquizattempts,
                 avgqz.avgquizgrade,
                 lastact.lastactivity,
-                tch.teachers
+                NULL AS teachers
 
             FROM {course} c
 
@@ -691,27 +687,63 @@ class report_service {
                  GROUP BY la.courseid
             ) lastact ON lastact.courseid = c.id
 
-            LEFT JOIN (
-                SELECT ctx.instanceid AS courseid,
-                       GROUP_CONCAT(DISTINCT CONCAT(u.firstname, ' ', u.lastname)
-                                    ORDER BY u.lastname SEPARATOR ', ') AS teachers
-                  FROM {role_assignments} ra
-                  JOIN {user} u ON u.id = ra.userid
-                  JOIN {context} ctx ON ctx.id = ra.contextid AND ctx.contextlevel = :ctxteacher
-                  JOIN {role} r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
-                 WHERE u.deleted = 0
-                   {$filterctx}
-                 GROUP BY ctx.instanceid
-            ) tch ON tch.courseid = c.id
-
             WHERE {$where}
             {$ordersql}
         ";
 
         $records = $DB->get_records_sql($sql, $params, $limitfrom, $limitnum);
+        $records = self::attach_teacher_names($records);
 
         if ($perpage === 0) {
             self::$lasttotalcount = count($records);
+        }
+
+        return $records;
+    }
+
+    /**
+     * Attaches comma-separated editing teacher names to course records.
+     *
+     * @param array $records Course records keyed by course ID.
+     * @return array Course records with teachers populated.
+     */
+    private static function attach_teacher_names(array $records): array {
+        global $DB;
+
+        if (empty($records)) {
+            return $records;
+        }
+
+        $courseids = array_map('intval', array_keys($records));
+        [$courseinsql, $params] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'teachercourse');
+        $params['contextlevel'] = CONTEXT_COURSE;
+
+        $rows = $DB->get_recordset_sql("
+            SELECT ra.id AS assignmentid,
+                   ctx.instanceid AS courseid,
+                   u.*
+              FROM {context} ctx
+              JOIN {role_assignments} ra ON ra.contextid = ctx.id
+              JOIN {role} r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
+              JOIN {user} u ON u.id = ra.userid
+             WHERE ctx.contextlevel = :contextlevel
+               AND ctx.instanceid {$courseinsql}
+               AND u.deleted = 0
+             ORDER BY ctx.instanceid ASC, u.lastname ASC, u.firstname ASC
+        ", $params);
+
+        $teachers = [];
+        foreach ($rows as $row) {
+            $courseid = (int) $row->courseid;
+            $teachers[$courseid][(int) $row->id] = fullname($row);
+        }
+        $rows->close();
+
+        foreach ($records as $record) {
+            $courseid = (int) $record->id;
+            $record->teachers = !empty($teachers[$courseid])
+                ? implode(', ', array_values($teachers[$courseid]))
+                : null;
         }
 
         return $records;
@@ -974,22 +1006,256 @@ class report_service {
     }
 
     /**
-     * Pre-warms the site_kpis MUC cache. Called by the build_summary_cache scheduled task.
+     * Builds the aggregate detailed-report payload for a course.
+     *
+     * This snapshot intentionally excludes user-identifying widgets such as the
+     * student activity table and leaderboard. Those remain live unless a future
+     * privacy-aware personal snapshot is added.
+     *
+     * @param int $courseid Course ID.
+     * @return array Detailed report aggregate payload.
+     */
+    private static function build_course_detail_snapshot_payload(int $courseid): array {
+        return [
+            'gradedist'     => self::get_grade_distribution($courseid),
+            'heatmap'       => self::get_engagement_heatmap($courseid),
+            'timeline'      => self::get_submission_timeline($courseid),
+            'quizbreakdown' => self::get_quiz_score_breakdown($courseid),
+            'trend'         => self::get_course_trend($courseid),
+            'modulefunnel'  => self::get_module_completion_funnel($courseid),
+            'generated'     => time(),
+        ];
+    }
+
+    /**
+     * Loads the persisted aggregate detailed-report snapshot for a course.
+     *
+     * @param int $courseid Course ID.
+     * @return array|null Snapshot payload, or null when it has not been built yet.
+     */
+    public static function get_course_detail_snapshot(int $courseid): ?array {
+        global $DB;
+
+        $record = $DB->get_record(
+            'local_courseinsights_detail',
+            ['courseid' => $courseid],
+            'payload',
+            IGNORE_MISSING
+        );
+
+        if (!$record || empty($record->payload)) {
+            return null;
+        }
+
+        $payload = json_decode($record->payload, true);
+        return is_array($payload) ? $payload : null;
+    }
+
+    /**
+     * Rebuilds and persists aggregate detailed-report snapshots for visible courses.
+     *
+     * Called by the overnight build_summary_cache scheduled task. One row is
+     * kept per course and updated in place, so repeated task runs do not
+     * duplicate snapshots.
      *
      * @return void
      */
-    public static function rebuild_site_kpis_cache(): void {
-        $atriskdays = max(1, (int) get_config('local_courseinsights', 'studentinactivitydays') ?: 14);
-        $cache      = \cache::make('local_courseinsights', 'site_kpis');
-        $cachekey   = 'site_overview_' . $atriskdays;
+    public static function rebuild_course_detail_snapshots(): void {
+        global $DB;
 
-        $cache->set($cachekey, [
+        $courses = $DB->get_records_select('course', 'id <> :site AND visible = 1', ['site' => SITEID], 'id ASC', 'id');
+        $now = time();
+
+        foreach ($courses as $course) {
+            $courseid = (int) $course->id;
+            $payload = self::build_course_detail_snapshot_payload($courseid);
+            $payloadjson = json_encode($payload) ?: '[]';
+
+            $record = $DB->get_record(
+                'local_courseinsights_detail',
+                ['courseid' => $courseid],
+                'id',
+                IGNORE_MISSING
+            );
+
+            if ($record) {
+                $record->payload = $payloadjson;
+                $record->timemodified = $now;
+                $DB->update_record('local_courseinsights_detail', $record);
+            } else {
+                $record = (object) [
+                    'courseid' => $courseid,
+                    'payload' => $payloadjson,
+                    'timecreated' => $now,
+                    'timemodified' => $now,
+                ];
+                $DB->insert_record('local_courseinsights_detail', $record);
+            }
+        }
+    }
+
+    /**
+     * Builds the site overview payload.
+     *
+     * @param int $atriskdays Inactivity threshold used by the at-risk list.
+     * @return array Site overview payload.
+     */
+    private static function build_site_overview_payload(int $atriskdays): array {
+        return [
             'kpis'         => self::get_site_kpis(),
             'topenrol'     => self::get_top_courses_by_enrolment(10),
             'topcompl'     => self::get_top_courses_by_completion(10),
             'monthlytrend' => self::get_monthly_active_users(12),
-            'atrisk'       => self::get_atrisk_students($atriskdays, 25),
-        ]);
+            'generated'    => time(),
+        ];
+    }
+
+    /**
+     * Returns the stable snapshot key for a site overview configuration.
+     *
+     * @param int $atriskdays Inactivity threshold used by the at-risk list.
+     * @return string Snapshot key.
+     */
+    private static function get_site_overview_snapshot_key(int $atriskdays): string {
+        return 'site_overview_' . max(1, $atriskdays);
+    }
+
+    /**
+     * Loads the persisted site overview snapshot, falling back to MUC if present.
+     *
+     * @param int $atriskdays Inactivity threshold used by the at-risk list.
+     * @return array|null Site overview payload, or null when the overnight task has not built one yet.
+     */
+    public static function get_site_overview_snapshot(int $atriskdays): ?array {
+        global $DB;
+
+        $atriskdays = max(1, $atriskdays);
+        $cache = \cache::make('local_courseinsights', 'site_kpis');
+        $snapshotkey = self::get_site_overview_snapshot_key($atriskdays);
+
+        $cached = $cache->get($snapshotkey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $record = $DB->get_record(
+            'local_courseinsights_site',
+            ['snapshotkey' => $snapshotkey],
+            'payload',
+            IGNORE_MISSING
+        );
+        if (!$record || empty($record->payload)) {
+            return null;
+        }
+
+        $payload = json_decode($record->payload, true);
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        $cache->set($snapshotkey, $payload);
+        return $payload;
+    }
+
+    /**
+     * Rebuilds and persists the Site Overview snapshot.
+     *
+     * Called by the overnight build_summary_cache scheduled task. The table has
+     * one row per snapshot key and is updated in place, so repeated task runs do
+     * not duplicate rows.
+     *
+     * @return void
+     */
+    public static function rebuild_site_kpis_cache(): void {
+        global $DB;
+
+        $atriskdays = max(1, (int) get_config('local_courseinsights', 'studentinactivitydays') ?: 14);
+        $snapshotkey = self::get_site_overview_snapshot_key($atriskdays);
+        $payload = self::build_site_overview_payload($atriskdays);
+        $payloadjson = json_encode($payload);
+        $now = time();
+
+        $record = $DB->get_record(
+            'local_courseinsights_site',
+            ['snapshotkey' => $snapshotkey],
+            'id',
+            IGNORE_MISSING
+        );
+
+        if ($record) {
+            $record->payload = $payloadjson;
+            $record->timemodified = $now;
+            $DB->update_record('local_courseinsights_site', $record);
+        } else {
+            $record = (object) [
+                'snapshotkey' => $snapshotkey,
+                'payload' => $payloadjson,
+                'timecreated' => $now,
+                'timemodified' => $now,
+            ];
+            $DB->insert_record('local_courseinsights_site', $record);
+        }
+
+        \cache::make('local_courseinsights', 'site_kpis')->set($snapshotkey, $payload);
+        self::rebuild_atrisk_snapshot($atriskdays);
+    }
+
+    /**
+     * Rebuilds the at-risk student snapshot for the supplied threshold.
+     *
+     * @param int $days Inactivity threshold.
+     * @return void
+     */
+    private static function rebuild_atrisk_snapshot(int $days): void {
+        global $DB;
+
+        $days = max(1, $days);
+        $cutoff = time() - ($days * DAYSECS);
+        $now = time();
+
+        $DB->delete_records('local_courseinsights_atrisk', ['threshold' => $days]);
+
+        $rows = $DB->get_recordset_sql(
+            "SELECT u.id AS userid,
+                    c.id AS courseid,
+                    MAX(COALESCE(la.timeaccess, 0)) AS lastaccess,
+                    MIN(ue.timecreated) AS enroltime
+               FROM {enrol} e
+               JOIN {user_enrolments} ue ON ue.enrolid = e.id AND ue.status = 0
+               JOIN {user} u
+                      ON u.id = ue.userid
+                     AND u.deleted = 0 AND u.confirmed = 1 AND u.suspended = 0
+               JOIN {course} c ON c.id = e.courseid AND c.id <> :site AND c.visible = 1
+               LEFT JOIN {user_lastaccess} la ON la.userid = ue.userid AND la.courseid = e.courseid
+               LEFT JOIN (
+                   SELECT course AS courseid, userid
+                     FROM {course_completions}
+                    WHERE timecompleted IS NOT NULL AND timecompleted > 0
+               ) cc ON cc.courseid = e.courseid AND cc.userid = ue.userid
+              WHERE e.status = 0
+                AND cc.userid IS NULL
+              GROUP BY u.id, c.id
+                HAVING MAX(COALESCE(la.timeaccess, 0)) < :cutoff
+              ORDER BY MAX(COALESCE(la.timeaccess, 0)) ASC",
+            ['site' => SITEID, 'cutoff' => $cutoff],
+            0,
+            1000
+        );
+
+        foreach ($rows as $row) {
+            $lastaccess = (int) $row->lastaccess;
+            $basetime = $lastaccess > 0 ? $lastaccess : (int) $row->enroltime;
+            $snapshot = (object) [
+                'userid' => (int) $row->userid,
+                'courseid' => (int) $row->courseid,
+                'threshold' => $days,
+                'lastaccess' => $lastaccess,
+                'daysinactive' => $basetime > 0 ? (int) floor(($now - $basetime) / DAYSECS) : null,
+                'timemodified' => $now,
+            ];
+            $DB->insert_record('local_courseinsights_atrisk', $snapshot);
+        }
+        $rows->close();
     }
 
 
@@ -1501,7 +1767,6 @@ class report_service {
             'dctx2'      => CONTEXT_COURSE,
             'dctx3'      => CONTEXT_COURSE,
             'dctx4'      => CONTEXT_COURSE,
-            'dctxteacher' => CONTEXT_COURSE,
         ], $rp1, $rp2, $rp3, $rp4);
 
         $sql = "
@@ -1580,16 +1845,7 @@ class report_service {
                      WHERE la.courseid = c.id
                 ) AS lastactivity,
 
-                (
-                    SELECT GROUP_CONCAT(DISTINCT CONCAT(u.firstname, ' ', u.lastname)
-                                        ORDER BY u.lastname SEPARATOR ', ')
-                      FROM {role_assignments} ra
-                      JOIN {user} u ON u.id = ra.userid
-                      JOIN {context} ctx ON ctx.id = ra.contextid
-                           AND ctx.instanceid = c.id AND ctx.contextlevel = :dctxteacher
-                      JOIN {role} r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
-                     WHERE u.deleted = 0
-                ) AS teachers
+                NULL AS teachers
 
             FROM {course} c
             WHERE c.id = :courseid
@@ -1598,8 +1854,12 @@ class report_service {
         ";
 
         $record = $DB->get_record_sql($sql, $params);
+        if (!$record) {
+            return null;
+        }
 
-        return $record ?: null;
+        $records = self::attach_teacher_names([(int) $record->id => $record]);
+        return reset($records) ?: null;
     }
 
     /**
@@ -1808,12 +2068,11 @@ class report_service {
                    AVG(qg.grade)                                        AS avggrade,
                    MIN(qg.grade)                                        AS mingrade,
                    MAX(qg.grade)                                        AS maxachieved,
-                   (SELECT COALESCE(gi.gradepass, 0)
+                   (SELECT MAX(COALESCE(gi.gradepass, 0))
                       FROM {grade_items} gi
                      WHERE gi.itemmodule   = 'quiz'
                        AND gi.iteminstance = q.id
-                       AND gi.itemtype     = 'mod'
-                     LIMIT 1)                                           AS gradepass,
+                       AND gi.itemtype     = 'mod')                     AS gradepass,
                    (SELECT COUNT(qg2.userid)
                       FROM {quiz_grades} qg2
                       JOIN {grade_items} gi2
@@ -1867,8 +2126,7 @@ class report_service {
      * Returns a 30-day assignment submission timeline for a course.
      *
      * Counts final submitted assignments (latest attempt, status = submitted)
-     * per day using timemodified as the submission date. Uses MySQL
-     * DATE(FROM_UNIXTIME()) — requires MySQL/MariaDB.
+     * per day using timemodified as the submission date.
      *
      * @param int $courseid
      * @return array Each element: {label, count, heightpct, showlabel, tooltip}, or [] if no data.
@@ -1879,26 +2137,26 @@ class report_service {
         $today = mktime(0, 0, 0);
         $since = $today - 29 * DAYSECS; // 30 days including today.
 
-        $rows = $DB->get_records_sql("
-            SELECT DATE(FROM_UNIXTIME(asub.timemodified)) AS subday,
-                   COUNT(*)                                AS cnt
+        $rows = $DB->get_recordset_sql("
+            SELECT asub.timemodified
               FROM {assign_submission} asub
               JOIN {assign} a ON a.id = asub.assignment
              WHERE a.course          = :courseid
                AND asub.status       = 'submitted'
                AND asub.latest       = 1
                AND asub.timemodified >= :since
-             GROUP BY subday
-             ORDER BY subday ASC
+             ORDER BY asub.timemodified ASC
         ", ['courseid' => $courseid, 'since' => $since]);
-
-        if (empty($rows)) {
-            return [];
-        }
 
         $lookup = [];
         foreach ($rows as $row) {
-            $lookup[$row->subday] = (int) $row->cnt;
+            $subday = date('Y-m-d', (int) $row->timemodified);
+            $lookup[$subday] = ($lookup[$subday] ?? 0) + 1;
+        }
+        $rows->close();
+
+        if (empty($lookup)) {
+            return [];
         }
 
         // Build full 30-day array, filling zeros for days with no submissions.
@@ -1934,8 +2192,7 @@ class report_service {
     /**
      * Returns a 52-week calendar heatmap of daily event counts for a course.
      *
-     * Queries logstore_standard_log grouped by day. Uses MySQL DATE(FROM_UNIXTIME())
-     * so requires MySQL/MariaDB.
+     * Reads bounded log rows and groups them in PHP so the query remains portable.
      *
      * @param int $courseid The course ID.
      * @return array Heatmap data as weekly groups, or empty array if no log data exists.
@@ -1948,23 +2205,24 @@ class report_service {
         $weekstart = $today - ($dow - 1) * DAYSECS;
         $startday  = $weekstart - 51 * 7 * DAYSECS; // 52 weeks total.
 
-        $rows = $DB->get_records_sql('
-            SELECT DATE(FROM_UNIXTIME(timecreated)) AS logday,
-                   COUNT(*)                          AS cnt
+        $rows = $DB->get_recordset_sql('
+            SELECT timecreated
               FROM {logstore_standard_log}
              WHERE courseid = :courseid
                AND timecreated >= :since
                AND userid > 0
-             GROUP BY logday
+             ORDER BY timecreated ASC
         ', ['courseid' => $courseid, 'since' => $startday]);
-
-        if (empty($rows)) {
-            return [];
-        }
 
         $lookup = [];
         foreach ($rows as $row) {
-            $lookup[$row->logday] = (int) $row->cnt;
+            $logday = date('Y-m-d', (int) $row->timecreated);
+            $lookup[$logday] = ($lookup[$logday] ?? 0) + 1;
+        }
+        $rows->close();
+
+        if (empty($lookup)) {
+            return [];
         }
 
         // Quartile-based colour intensity from non-zero day counts.
@@ -2163,7 +2421,7 @@ class report_service {
     /**
      * Returns monthly active user counts from the standard log for the last N months.
      *
-     * Uses DATE_FORMAT (MariaDB/MySQL) to group by year-month. Returns oldest month first.
+     * Uses a bounded, streamed log query and groups timestamps in PHP for database portability.
      *
      * @param int $months Number of months to look back.
      * @return array Each element: ['label', 'active_users', 'events'].
@@ -2171,28 +2429,40 @@ class report_service {
     public static function get_monthly_active_users(int $months = 12): array {
         global $DB;
 
+        $months = max(1, min(24, $months));
         $cutoff = strtotime("-{$months} months");
 
-        $rows = $DB->get_records_sql(
-            "SELECT DATE_FORMAT(FROM_UNIXTIME(timecreated), '%Y-%m') AS yearmonth,
-                    COUNT(DISTINCT userid) AS active_users,
-                    COUNT(*) AS events
+        $rows = $DB->get_recordset_sql(
+            "SELECT userid, timecreated
                FROM {logstore_standard_log}
               WHERE courseid <> :site
                 AND userid > 0
                 AND timecreated > :cutoff
-              GROUP BY yearmonth
-              ORDER BY yearmonth ASC",
+              ORDER BY timecreated ASC",
             ['site' => SITEID, 'cutoff' => $cutoff]
         );
 
-        $result = [];
+        $buckets = [];
         foreach ($rows as $r) {
-            [$year, $month] = explode('-', $r->yearmonth);
+            $yearmonth = date('Y-m', (int) $r->timecreated);
+            if (!isset($buckets[$yearmonth])) {
+                $buckets[$yearmonth] = [
+                    'users' => [],
+                    'events' => 0,
+                ];
+            }
+            $buckets[$yearmonth]['users'][(int) $r->userid] = true;
+            $buckets[$yearmonth]['events']++;
+        }
+        $rows->close();
+
+        $result = [];
+        foreach ($buckets as $yearmonth => $bucket) {
+            [$year, $month] = explode('-', $yearmonth);
             $result[] = [
                 'label'        => date('M Y', mktime(0, 0, 0, (int) $month, 1, (int) $year)),
-                'active_users' => (int) $r->active_users,
-                'events'       => (int) $r->events,
+                'active_users' => count($bucket['users']),
+                'events'       => $bucket['events'],
             ];
         }
         return $result;
@@ -2213,9 +2483,8 @@ class report_service {
         $cutoff = time() - ($days * DAYSECS);
         $now    = time();
 
-        $rows = $DB->get_records_sql(
-            "SELECT CONCAT(CAST(ue.userid AS CHAR), '-', CAST(e.courseid AS CHAR)) AS rowkey,
-                    u.id AS userid, u.firstname, u.lastname,
+        $rows = $DB->get_recordset_sql(
+            "SELECT u.id AS userid, u.firstname, u.lastname,
                     c.id AS courseid, c.fullname AS coursefullname,
                     COALESCE(la.timeaccess, 0) AS lastaccess
                FROM {enrol} e
@@ -2254,6 +2523,59 @@ class report_service {
                 'daysinactive' => $daysinactive !== null ? $daysinactive : '-',
             ];
         }
+        $rows->close();
+
+        return $result;
+    }
+
+    /**
+     * Returns at-risk students from the overnight snapshot table.
+     *
+     * @param int $days Inactivity threshold.
+     * @param int $limit Max rows.
+     * @return array Each element: ['userid', 'fullname', 'courseid', 'coursename', 'courseurl', 'lastaccess', 'daysinactive'].
+     */
+    public static function get_atrisk_students_from_snapshot(int $days = 14, int $limit = 25): array {
+        global $DB;
+
+        $days = max(1, $days);
+        $rows = $DB->get_records_sql(
+            "SELECT a.id,
+                    a.userid,
+                    u.firstname,
+                    u.lastname,
+                    u.firstnamephonetic,
+                    u.lastnamephonetic,
+                    u.middlename,
+                    u.alternatename,
+                    c.id AS courseid,
+                    c.fullname AS coursefullname,
+                    a.lastaccess,
+                    a.daysinactive
+               FROM {local_courseinsights_atrisk} a
+               JOIN {user} u ON u.id = a.userid AND u.deleted = 0
+               JOIN {course} c ON c.id = a.courseid AND c.visible = 1
+              WHERE a.threshold = :threshold
+              ORDER BY a.daysinactive DESC, a.lastaccess ASC",
+            ['threshold' => $days],
+            0,
+            $limit
+        );
+
+        $result = [];
+        foreach ($rows as $row) {
+            $lastaccess = (int) $row->lastaccess;
+            $result[] = [
+                'userid' => (int) $row->userid,
+                'fullname' => fullname($row),
+                'courseid' => (int) $row->courseid,
+                'coursename' => format_string($row->coursefullname),
+                'courseurl' => (new \moodle_url('/course/view.php', ['id' => $row->courseid]))->out(false),
+                'lastaccess' => $lastaccess > 0 ? userdate($lastaccess) : get_string('atrisk_never', 'local_courseinsights'),
+                'daysinactive' => $row->daysinactive !== null ? (int) $row->daysinactive : '-',
+            ];
+        }
+
         return $result;
     }
 

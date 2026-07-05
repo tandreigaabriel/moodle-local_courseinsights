@@ -71,7 +71,7 @@ if (!class_exists('admin_setting_courseinsights_licensekey')) {
 
             [$cls, $label] = $badges[$status] ?? ['secondary', $status];
 
-            $badge = '<span class="badge badge-' . $cls . ' p-2" style="font-size:0.85em">' . $label . '</span>';
+            $badge = '<span class="badge badge-' . s($cls) . ' p-2" style="font-size:0.85em">' . s($label) . '</span>';
 
             $detail = '';
             if ($info) {
@@ -79,7 +79,7 @@ if (!class_exists('admin_setting_courseinsights_licensekey')) {
                 if ($plan) {
                     $detail .= ' &nbsp;<strong>'
                         . get_string('license_plan', 'local_courseinsights')
-                        . ':</strong> ' . htmlspecialchars($plan);
+                        . ':</strong> ' . s($plan);
                 }
                 if (!empty($info->expires_at)) {
                     $detail .= ' &nbsp;<strong>'
@@ -89,7 +89,7 @@ if (!class_exists('admin_setting_courseinsights_licensekey')) {
                 }
                 if (!empty($info->domain)) {
                     $detail .= ' &nbsp;<strong>' . get_string('license_domain', 'local_courseinsights') . ':</strong> '
-                    . htmlspecialchars($info->domain);
+                    . s($info->domain);
                 }
                 if (!empty($info->local)) {
                     $detail .= ' &nbsp;<span class="text-muted small">'
@@ -119,12 +119,10 @@ if ($hassiteconfig) {
     // Marketplace / Terms of Use notice.
     $marketplacenotice = '<div class="alert alert-info" role="alert">'
         . get_string('marketplace_notice', 'local_courseinsights') . '<br><br>'
-        . '<a href="https://tandreig.com/plugins" target="_blank" rel="noopener" class="btn btn-sm btn-primary">'
-        . 'Request a Licence &rarr;</a>'
-        . '&nbsp;&nbsp;<a href="https://tandreig.com/terms-and-conditions" target="_blank" rel="noopener">'
-        . 'Terms &amp; Conditions</a>'
+        . '<a href="https://tandreig.com/terms-and-conditions" target="_blank" rel="noopener">'
+        . get_string('marketplace_terms_link', 'local_courseinsights') . '</a>'
         . '&nbsp;&nbsp;<a href="https://tandreig.com/privacy-policy" target="_blank" rel="noopener">'
-        . 'Privacy Policy</a>'
+        . get_string('marketplace_privacy_link', 'local_courseinsights') . '</a>'
         . '</div>';
 
     $settings->add(new admin_setting_heading(
@@ -145,7 +143,7 @@ if ($hassiteconfig) {
         get_string('settings_license_key', 'local_courseinsights'),
         get_string('settings_license_key_desc', 'local_courseinsights'),
         '',
-        PARAM_RAW_TRIMMED
+        PARAM_TEXT
     ));
 
     // General.

@@ -136,7 +136,7 @@
             <span class="ci-stat-value ci-stat-value--tertiary">{{statsubmissions}}</span>
             {{#hascompare}}{{#deltasubmissions}}
             <div class="ci-compare-row">
-                <span class="ci-compare-vs">vs {{comparevalue}}</span>
+                <span class="ci-compare-vs">{{comparetext}}</span>
                 {{#isup}}<span class="ci-delta ci-delta--up">&#x2191;{{pct}}%</span>{{/isup}}
                 {{#isdown}}<span class="ci-delta ci-delta--down">&#x2193;{{pct}}%</span>{{/isdown}}
                 {{#isneutral}}<span class="ci-delta ci-delta--neutral">&mdash;</span>{{/isneutral}}
@@ -150,7 +150,7 @@
             <span class="ci-stat-value">{{statattempts}}</span>
             {{#hascompare}}{{#deltaattempts}}
             <div class="ci-compare-row">
-                <span class="ci-compare-vs">vs {{comparevalue}}</span>
+                <span class="ci-compare-vs">{{comparetext}}</span>
                 {{#isup}}<span class="ci-delta ci-delta--up">&#x2191;{{pct}}%</span>{{/isup}}
                 {{#isdown}}<span class="ci-delta ci-delta--down">&#x2193;{{pct}}%</span>{{/isdown}}
                 {{#isneutral}}<span class="ci-delta ci-delta--neutral">&mdash;</span>{{/isneutral}}

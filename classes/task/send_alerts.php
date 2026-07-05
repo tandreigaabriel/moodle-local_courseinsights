@@ -104,6 +104,37 @@ class send_alerts extends \core\task\scheduled_task {
             return;
         }
 
+        $courseids = array_map('intval', array_keys($courses));
+        [$courseinsql, $courseparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'alertcourse');
+        $teacherparams = array_merge($courseparams, [
+            'contextlevel' => CONTEXT_COURSE,
+            'roleid' => $teacherroleid,
+        ]);
+        $teacherrows = $DB->get_recordset_sql("
+            SELECT ra.id AS assignmentid,
+                   ctx.instanceid AS courseid,
+                   u.id AS userid,
+                   u.*
+              FROM {context} ctx
+              JOIN {role_assignments} ra ON ra.contextid = ctx.id
+              JOIN {user} u ON u.id = ra.userid
+             WHERE ctx.contextlevel = :contextlevel
+               AND ctx.instanceid {$courseinsql}
+               AND ra.roleid = :roleid
+               AND u.deleted = 0
+               AND u.suspended = 0
+             ORDER BY ctx.instanceid ASC, u.lastname ASC, u.firstname ASC
+        ", $teacherparams);
+
+        $teachersbycourse = [];
+        foreach ($teacherrows as $row) {
+            $courseid = (int) $row->courseid;
+            $teacher = clone($row);
+            $teacher->id = (int) $row->userid;
+            $teachersbycourse[$courseid][$teacher->id] = $teacher;
+        }
+        $teacherrows->close();
+
         $noreply     = \core_user::get_noreply_user();
         $dashboardurl = (new \moodle_url('/local/courseinsights/index.php'))->out(false);
         $inactivecutoff = $now - ($inactivedays * DAYSECS);
@@ -143,20 +174,7 @@ class send_alerts extends \core\task\scheduled_task {
                 continue;
             }
 
-            // Find editing teachers enrolled in this course.
-            $coursecontext = \context_course::instance($courseid);
-            $teachers = $DB->get_records_sql("
-                SELECT DISTINCT u.*
-                  FROM {user} u
-                  JOIN {role_assignments} ra ON ra.userid = u.id
-                 WHERE ra.contextid = :ctxid
-                   AND ra.roleid    = :roleid
-                   AND u.deleted    = 0
-                   AND u.suspended  = 0
-            ", [
-                'ctxid'  => $coursecontext->id,
-                'roleid' => $teacherroleid,
-            ]);
+            $teachers = $teachersbycourse[$courseid] ?? [];
 
             if (empty($teachers)) {
                 continue;

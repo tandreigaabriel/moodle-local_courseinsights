@@ -1,6 +1,6 @@
 # Course Insights for Moodle
 
-`local_courseinsights` — Developed by [TAG Web Design](https://www.tandreig.com/plugins)
+`local_courseinsights` — Developed by TAG Web Design
 
 ---
 
@@ -10,7 +10,7 @@
 
 Install it once, point your browser to **Site administration → Reports → Course Insights**, and immediately see enrolment numbers, submission rates, quiz activity, student health scores, and last activity dates across all your courses — filtered, sorted, and ready to export.
 
-No configuration required. No changes to student-facing pages.
+After licence activation, the core reports work without changing student-facing pages. Optional features such as reminders, alerts, digest emails, branding, and webhooks can be enabled from the plugin settings.
 
 ---
 
@@ -22,7 +22,7 @@ No configuration required. No changes to student-facing pages.
 - **Health score** — every course is graded A to F based on completion rate, recent activity, and engagement; spot struggling courses instantly
 - **Filter by** category, course, cohort, date range, activity type (assignments / quizzes / exams), and student status — all filters update the dashboard instantly via AJAX
 - **Filter presets** — save your most-used filter combinations and restore them in one click
-- **Compare period** — see how the last 30 days compare to the previous 30 days; trend arrows on key metrics show whether things are improving or declining
+- **Compare period** — optionally compare the main date range against a separate baseline date range; trend arrows show whether submissions and attempts are improving or declining
 - **Bar chart overview** — visual comparison of activity across your top courses
 - **Pagination** — handles hundreds of courses without slowing down
 
@@ -37,6 +37,7 @@ Click "Detailed Report" on any course card to open a full breakdown:
 - **Submission timeline** — 30-day daily submission bar chart
 - **Quiz score breakdown** — average, min, max, and pass rate per quiz
 - **Print / PDF view** — print-ready layout with one click
+- **Cached aggregate charts** — grade distribution, heatmap, submission timeline, quiz breakdown, trend, and completion funnel are rebuilt by the scheduled cache task so course detail pages load faster on large sites
 
 ### Exports
 
@@ -48,6 +49,12 @@ Click "Detailed Report" on any course card to open a full breakdown:
 - Get notified when a course falls below a completion threshold or goes inactive for too many days
 - Alerts are sent to course editing teachers via Moodle messaging
 - Configurable thresholds; enabled per site
+
+### Student inactivity reminders
+
+- Nightly reminder task can email students who have not accessed an enrolled, incomplete course for the configured number of days
+- One email is sent per student and can list several inactive courses
+- Reminder tracking prevents the same student/course reminder being sent again until another full inactivity period has passed
 
 ### Digest emails
 
@@ -69,7 +76,7 @@ Click "Detailed Report" on any course card to open a full breakdown:
 
 - Moodle 4.5 or later
 - PHP 8.1 or later
-- MariaDB or MySQL
+- A Moodle-supported database engine, including MariaDB, MySQL, or PostgreSQL
 
 ---
 
@@ -77,9 +84,11 @@ Click "Detailed Report" on any course card to open a full breakdown:
 
 Course Insights is a **commercial plugin** distributed under the GNU GPL v3.
 
-A licence key is required to use the plugin. You can request a key at [tandreig.com/plugins](https://www.tandreig.com/plugins).
+A licence key is required to use the plugin. Course Insights is purchased through Moodle Marketplace; licence keys are issued after the Marketplace purchase has been verified.
 
-Once you have your key, enter it in **Site administration → Plugins → Local plugins → Course Insights settings → Licence Key** and save. Activation is automatic — no manual steps needed after that.
+After purchasing through Moodle Marketplace, submit the post-purchase licence delivery form at `https://tandreig.com/request-key`. This form is not a separate purchase path; it is used only to match the Marketplace purchase to the customer's Moodle site and delivery email. The form asks for the plugin name, full name, institution or organisation, email address, Moodle site URL, and an optional message. The licence key is sent to the email address provided after the Marketplace payment is confirmed.
+
+Once you receive your key, enter it in **Site administration → Plugins → Local plugins → Course Insights settings → Licence Key** and save. Activation is automatic; no manual steps are needed after that.
 
 ---
 
@@ -109,6 +118,60 @@ After installation the dashboard is available from:
 
 **Site administration → Reports → Course Insights**
 
+For a shorter product overview, see [about.md](about.md).
+
+---
+
+## How the plugin works
+
+Course Insights reads existing Moodle course, enrolment, activity, completion, grade, and access-log data. It does not change courses, enrolments, grades, or student activity records.
+
+### Scheduled processing
+
+The plugin uses Moodle scheduled tasks to keep heavy reports fast:
+
+| Task | Default time | What it does |
+|---|---:|---|
+| Build Course Insights summary cache | 02:00 daily | Rebuilds dashboard summaries, Site Overview snapshots, at-risk student snapshots, and aggregate Detailed Report snapshots |
+| Renew licence token | 03:00 Monday | Refreshes the local licence status from the licence service |
+| Send course alerts | 07:00 daily | Sends alerts to editing teachers when configured thresholds are breached |
+| Send digest email | 08:00 daily | Checks whether weekly/monthly digest emails are due |
+| Send student inactivity reminders | 09:00 daily | Emails inactive students when enabled |
+
+These tasks run when Moodle cron runs. If Moodle cron is not running, caches and emails will not update.
+
+### Cache and snapshot tables
+
+The cache task is designed to be repeatable. Running it every night does not duplicate normal report rows:
+
+| Table | Purpose | Duplicate protection |
+|---|---|---|
+| `local_courseinsights_summary` | Dashboard all-time course summaries | The task deletes and rebuilds the all-time summary set |
+| `local_courseinsights_site` | Site Overview KPI/chart payloads | One row per snapshot key; updated in place |
+| `local_courseinsights_atrisk` | At-risk student snapshot for the configured inactivity threshold | The task deletes and rebuilds rows for that threshold |
+| `local_courseinsights_detail` | Aggregate Detailed Report chart payloads | One row per course; updated in place |
+| `local_courseinsights_reminders` | Student reminder send history | Unique student+course row; updated after later reminders |
+
+The Detailed Report cache stores aggregate chart data only. Student Activity and Top Students by Grade are still read live because they display identifiable student information.
+
+### At-risk students
+
+The Site Overview at-risk table lists active, enrolled, incomplete students whose course access is older than the configured Student inactivity threshold. If a student has never accessed the course, the plugin displays `Never` for last access and calculates days inactive from the enrolment time.
+
+### Student reminder emails
+
+Student reminders work like this:
+
+1. Enable **Student inactivity reminders** in Course Insights settings.
+2. Set **Student inactivity threshold (days)**.
+3. Moodle cron runs the `send_student_reminders` scheduled task.
+4. The task finds active, confirmed, unsuspended students enrolled in visible, incomplete courses.
+5. A student is included when their last course access is older than the threshold, or they have never accessed the course.
+6. The task sends one Moodle notification/email per student with links to the inactive course(s).
+7. The plugin records the send in `local_courseinsights_reminders` so the same student/course is not reminded again until another full threshold period has passed.
+
+Example: if the threshold is 14 days and a reminder is sent today, the same student/course will not be reminded again until at least 14 more days have passed.
+
 ---
 
 ## Capabilities
@@ -127,14 +190,16 @@ All settings are at **Site administration → Plugins → Local plugins → Cour
 
 | Setting | Default | Purpose |
 |---|---|---|
-| Licence Key | — | Enter your licence key here to activate the plugin |
+| Licence Key | — | Enter the licence key issued after Moodle Marketplace purchase verification |
 | Mini exam keywords | `mini,mini exam` | Keywords used to identify mini exams from quiz names |
 | Exam keywords | `exam,final` | Keywords used to identify exams from quiz names |
-| Student role IDs | `5` | Comma-separated Moodle role IDs counted as students |
+| Student role IDs | `5,11,25` | Comma-separated Moodle role IDs counted as students |
 | Enable summary cache | Off | Pre-aggregate data nightly for faster loading on large sites |
 | Alerts enabled | Off | Enable automated low-engagement alerts to course teachers |
 | Alert completion threshold | 50 | Alert when course completion drops below this % |
 | Alert inactive days | 30 | Alert when no student activity for this many days |
+| Student inactivity reminders | Off | Email inactive students from the scheduled reminder task |
+| Student inactivity threshold | 14 | Number of inactive days used by student reminders and the Site Overview at-risk snapshot |
 | Digest emails | Off | Send weekly or monthly summary emails to managers |
 | Webhook URL | — | POST course data nightly to an external URL |
 
@@ -155,14 +220,36 @@ Make sure your server can make outbound HTTPS requests to `tandreig.com`. Check 
 
 ## Privacy
 
-Course Insights reads existing Moodle data (courses, enrolments, assignments, quizzes, grades, access logs). It stores only aggregated course-level summaries — no personal data is stored by this plugin. See [PRIVACY.md](PRIVACY.md) or the plugin's privacy provider for full details.
+Course Insights reads existing Moodle data (courses, enrolments, assignments, quizzes, grades, completions, and access logs). It stores aggregate course/report snapshots for performance.
+
+The plugin also stores limited personal tracking data for:
+
+- student inactivity reminder history (`userid`, `courseid`, `timereminded`)
+- Site Overview at-risk snapshots (`userid`, `courseid`, inactivity threshold, last access time, calculated inactive days)
+
+These records are used to prevent duplicate reminders and to make the Site Overview load quickly. See [PRIVACY.md](PRIVACY.md) or the plugin's privacy provider for full details.
+
+---
+
+## Moodle review notes addressed
+
+The plugin has been adjusted for Moodle review feedback:
+
+- Log aggregation avoids MySQL-only date functions and groups bounded timestamp rows in PHP or uses scheduled snapshots.
+- Site Overview and Detailed Report heavy views use scheduled snapshot tables so large sites do not run the most expensive reports on every page load.
+- Licence wording is Marketplace-first; the external form is documented only as post-purchase licence delivery and verification.
+- The admin licence notice uses language strings for visible text and no longer links to an off-Marketplace purchase/request page.
+- Licence activation uses Moodle's `\curl` wrapper instead of direct `curl_init()`.
+- The Privacy API declares and exports/deletes reminder and at-risk student snapshot records.
+- Alert recipients are preloaded for affected courses to avoid querying teachers inside the per-course send loop.
+- Cache and message-provider language strings are defined in `lang/en/local_courseinsights.php`.
 
 ---
 
 ## Support
 
 - **Bug reports & feature requests:** [github.com/tandreigaabriel/moodle-local_courseinsights/issues](https://github.com/tandreigaabriel/moodle-local_courseinsights/issues)
-- **Developed and maintained by:** [TAG Web Design](https://www.tandreig.com/plugins) — Andrei Toma
+- **Developed and maintained by:** TAG Web Design — Andrei Toma
 
 ---
 
@@ -173,6 +260,25 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 ---
 
 ## Changelog
+
+### 0.47.0
+- Filter sidebar is now organised into numbered steps: courses, main date range, optional comparison period, and activity/student scope
+- Main and comparison date labels were renamed to make it clearer which period controls the dashboard and which period is only the baseline
+- README now documents the Moodle review fixes, including portable log aggregation, Marketplace-first licence delivery, Privacy API coverage, Moodle curl usage, and missing language strings
+
+### 0.46.9
+- Compare Period filter section now uses plugin-owned `<details>/<summary>` markup instead of Moodle's default collapsible form header, so the visible button style changes consistently across themes
+
+### 0.46.8
+- At-risk snapshot now calculates inactive days for never-accessed students from enrolment time and displays `Never` for last access
+- Student reminder query now groups by student/course to avoid duplicate course entries when multiple enrolment methods exist
+- Compare period UI tightened so Moodle's built-in collapse arrow does not leak into the filter header
+- README expanded with licence, scheduled-task, cache, at-risk, and student-reminder workflow details
+- Added `PRIVACY.md` and refreshed `about.md` so public documentation matches the current privacy and licence behaviour
+
+### 0.46.7
+- Detailed Report performance: aggregate chart data is rebuilt into per-course snapshots by the scheduled cache task
+- Site Overview and Detailed Report caches update existing rows instead of duplicating snapshot rows
 
 ### 0.46.2
 - Filter panel UI overhaul: accordion headers now full-row clickable buttons with chevron on the right and no grey square icon; course autocomplete unified into a single searchable control; all filter fields now consistent full width; compare period labels left-aligned
@@ -208,7 +314,7 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 - xlsx export button added to dashboard
 
 ### 0.39.0
-- Licence gate — activate via key from tandreig.com/plugins; 7-day grace period; weekly auto-renewal
+- Licence gate — activate via the key delivered for the purchase channel; 7-day grace period; weekly auto-renewal
 
 ### 0.37.0
 - Major SQL performance refactor — 13 correlated subqueries replaced with JOIN-based aggregations

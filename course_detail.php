@@ -68,19 +68,34 @@ $lastactivity = !empty($record->lastactivity) ? (int)$record->lastactivity : nul
 $isactive     = $lastactivity && ($now - $lastactivity) < $thirtydays;
 $completionrate = isset($record->completionrate) ? (float)$record->completionrate : null;
 
-$gradedist = \local_courseinsights\report_service::get_grade_distribution($courseid);
-$heatmap   = \local_courseinsights\report_service::get_engagement_heatmap($courseid);
+$detailsnapshot = \local_courseinsights\report_service::get_course_detail_snapshot($courseid);
+$usesnapshot = is_array($detailsnapshot);
 
-$timeline = \local_courseinsights\report_service::get_submission_timeline($courseid);
+$gradedist = $usesnapshot
+    ? ($detailsnapshot['gradedist'] ?? [])
+    : \local_courseinsights\report_service::get_grade_distribution($courseid);
+$heatmap = $usesnapshot
+    ? ($detailsnapshot['heatmap'] ?? [])
+    : \local_courseinsights\report_service::get_engagement_heatmap($courseid);
+
+$timeline = $usesnapshot
+    ? ($detailsnapshot['timeline'] ?? [])
+    : \local_courseinsights\report_service::get_submission_timeline($courseid);
 
 $hasstudentaccess = has_capability('local/courseinsights:manage', $context);
 $studenttable     = $hasstudentaccess
     ? \local_courseinsights\report_service::get_student_activity_table($courseid)
     : [];
 
-$quizbreakdown  = \local_courseinsights\report_service::get_quiz_score_breakdown($courseid);
-$trend          = \local_courseinsights\report_service::get_course_trend($courseid);
-$modulefunnel   = \local_courseinsights\report_service::get_module_completion_funnel($courseid);
+$quizbreakdown = $usesnapshot
+    ? ($detailsnapshot['quizbreakdown'] ?? [])
+    : \local_courseinsights\report_service::get_quiz_score_breakdown($courseid);
+$trend = $usesnapshot
+    ? ($detailsnapshot['trend'] ?? [])
+    : \local_courseinsights\report_service::get_course_trend($courseid);
+$modulefunnel = $usesnapshot
+    ? ($detailsnapshot['modulefunnel'] ?? [])
+    : \local_courseinsights\report_service::get_module_completion_funnel($courseid);
 $leaderboard    = \local_courseinsights\report_service::get_top_students_by_grade($courseid);
 
 $brandaccent  = (string) get_config('local_courseinsights', 'brandaccentcolor');
@@ -197,6 +212,10 @@ $templatecontext = [
 ] + $trend;
 
 echo $OUTPUT->header();
+
+if (!$usesnapshot) {
+    echo $OUTPUT->notification(get_string('detailcachepending', 'local_courseinsights'), 'info');
+}
 
 if ($validaccent) {
     echo '<style>.local-courseinsights-detail{'

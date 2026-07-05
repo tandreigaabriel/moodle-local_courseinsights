@@ -44,6 +44,13 @@ class filter_form extends \moodleform {
         $courseoption = $this->_customdata['courseoption'] ?? [];
         $categories = $this->_customdata['categories'] ?? [];
         $cohorts = $this->_customdata['cohorts'] ?? [];
+        $compareopen = !empty($this->_customdata['compareopen']);
+
+        $mform->addElement('html', self::filter_step(
+            '1',
+            get_string('filterstep_courses', 'local_courseinsights'),
+            get_string('filterstep_courses_desc', 'local_courseinsights')
+        ));
 
         if (count($cohorts) > 1) {
             $mform->addElement('select', 'cohortid', get_string('cohort', 'local_courseinsights'), $cohorts);
@@ -62,6 +69,12 @@ class filter_form extends \moodleform {
         ]);
         $mform->setType('courseid', PARAM_INT);
         $mform->setDefault('courseid', 0);
+
+        $mform->addElement('html', self::filter_step(
+            '2',
+            get_string('filterstep_dates', 'local_courseinsights'),
+            get_string('filterstep_dates_desc', 'local_courseinsights')
+        ));
 
         $mform->addElement(
             'text',
@@ -107,8 +120,41 @@ class filter_form extends \moodleform {
             'local-courseinsights-date-presets mb-2'
         ));
 
-        $mform->addElement('header', 'compareheader', get_string('compareperiod_heading', 'local_courseinsights'));
-        $mform->setExpanded('compareheader', false);
+        $compareattrs = [
+            'class' => 'ci-filter-section ci-filter-section--compare',
+        ];
+        if ($compareopen) {
+            $compareattrs['open'] = 'open';
+        }
+
+        $mform->addElement('html', \html_writer::start_tag('details', $compareattrs));
+        $mform->addElement(
+            'html',
+            \html_writer::tag(
+                'summary',
+                \html_writer::span(
+                    \html_writer::span('3', 'ci-filter-step__number') .
+                        \html_writer::span(
+                            \html_writer::span(
+                                get_string('compareperiod_heading', 'local_courseinsights'),
+                                'ci-filter-section__label'
+                            ) .
+                                \html_writer::span(
+                                    get_string('compareperiod_summary', 'local_courseinsights'),
+                                    'ci-filter-section__hint'
+                                ),
+                            'ci-filter-step__body'
+                        ),
+                    'ci-filter-section__text'
+                ) .
+                    \html_writer::span('', 'ci-filter-section__icon', ['aria-hidden' => 'true']),
+                ['class' => 'ci-filter-section__summary']
+            )
+        );
+        $mform->addElement('html', \html_writer::div(
+            get_string('compareperiod_desc', 'local_courseinsights'),
+            'ci-filter-section__desc'
+        ));
 
         $mform->addElement(
             'text',
@@ -127,6 +173,14 @@ class filter_form extends \moodleform {
         );
         $mform->setType('compare_enddate', PARAM_TEXT);
         $mform->addHelpButton('compare_enddate', 'dateformathelp', 'local_courseinsights');
+
+        $mform->addElement('html', \html_writer::end_tag('details'));
+
+        $mform->addElement('html', self::filter_step(
+            '4',
+            get_string('filterstep_scope', 'local_courseinsights'),
+            get_string('filterstep_scope_desc', 'local_courseinsights')
+        ));
 
         $activitytypes = [
             'all' => get_string('activitytype_all', 'local_courseinsights'),
@@ -175,5 +229,25 @@ class filter_form extends \moodleform {
                 'class' => 'ci-reset-btn',
             ]
         ));
+    }
+
+    /**
+     * Builds a compact explanatory heading for a filter section.
+     *
+     * @param string $number Section number.
+     * @param string $title Section title.
+     * @param string $description Section description.
+     * @return string HTML.
+     */
+    private static function filter_step(string $number, string $title, string $description): string {
+        return \html_writer::div(
+            \html_writer::span($number, 'ci-filter-step__number') .
+                \html_writer::span(
+                    \html_writer::span($title, 'ci-filter-step__title') .
+                        \html_writer::span($description, 'ci-filter-step__desc'),
+                    'ci-filter-step__body'
+                ),
+            'ci-filter-step'
+        );
     }
 }
