@@ -1,5 +1,4 @@
-# Private local development files. Never ship license bypasses, local patches,
-# test keys, or environment overrides with the Marketplace package.
+# Private local development files. Never ship license bypasses, local patches
 /tests
 
 .env
@@ -10,3 +9,4 @@ local-dev.php
 courseinsights-dev.php
 dev-bypass.patch
 issue.md
+.agents

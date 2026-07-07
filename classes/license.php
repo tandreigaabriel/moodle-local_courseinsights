@@ -198,9 +198,9 @@ class license {
             'Accept: application/json',
         ]);
         $curl->setopt([
-            CURLOPT_USERAGENT => 'Moodle/local_courseinsights',
-            CURLOPT_TIMEOUT => 10,
-            CURLOPT_SSL_VERIFYPEER => true,
+            'CURLOPT_USERAGENT' => 'Moodle/local_courseinsights',
+            'CURLOPT_TIMEOUT' => 10,
+            'CURLOPT_SSL_VERIFYPEER' => true,
         ]);
 
         $raw = $curl->post($url, $jsonbody);

@@ -68,6 +68,14 @@ class provider implements
             'privacy:metadata:atrisk'
         );
 
+        $collection->add_database_table(
+            'local_courseinsights_summary',
+            [
+                'teachers' => 'privacy:metadata:summary:teachers',
+            ],
+            'privacy:metadata:summary'
+        );
+
         return $collection;
     }
 
@@ -96,6 +104,18 @@ class provider implements
                JOIN {local_courseinsights_atrisk} cia ON cia.courseid = ctx.instanceid
               WHERE ctx.contextlevel = :contextlevel
                 AND cia.userid = :userid",
+            [
+                'contextlevel' => CONTEXT_COURSE,
+                'userid' => $userid,
+            ]
+        );
+        $contextlist->add_from_sql(
+            "SELECT ctx.id
+               FROM {context} ctx
+               JOIN {local_courseinsights_summary} cis ON cis.courseid = ctx.instanceid
+               JOIN {role_assignments} ra ON ra.contextid = ctx.id AND ra.userid = :userid
+               JOIN {role} r ON r.id = ra.roleid AND r.archetype = 'editingteacher'
+              WHERE ctx.contextlevel = :contextlevel",
             [
                 'contextlevel' => CONTEXT_COURSE,
                 'userid' => $userid,
@@ -175,6 +195,19 @@ class provider implements
                 [get_string('privacy:atrisk', 'local_courseinsights')],
                 (object) ['atrisk' => $atriskdata]
             );
+
+            $summary = $DB->get_record(
+                'local_courseinsights_summary',
+                ['courseid' => $context->instanceid],
+                'teachers',
+                IGNORE_MISSING
+            );
+            if ($summary && !empty($summary->teachers)) {
+                writer::with_context($context)->export_data(
+                    [get_string('privacy:summary', 'local_courseinsights')],
+                    (object) ['teachers' => $summary->teachers]
+                );
+            }
         }
     }
 
@@ -193,6 +226,7 @@ class provider implements
 
         $DB->delete_records('local_courseinsights_reminders', ['courseid' => $context->instanceid]);
         $DB->delete_records('local_courseinsights_atrisk', ['courseid' => $context->instanceid]);
+        $DB->delete_records('local_courseinsights_summary', ['courseid' => $context->instanceid]);
     }
 
     /**
@@ -221,6 +255,16 @@ class provider implements
                         'courseid' => $context->instanceid,
                     ]
                 );
+                $isteacher = $DB->record_exists_sql(
+                    "SELECT 1 FROM {role_assignments} ra
+                       JOIN {role} r ON r.id = ra.roleid
+                      WHERE ra.userid = :userid AND ra.contextid = :ctxid
+                        AND r.archetype = 'editingteacher'",
+                    ['userid' => $userid, 'ctxid' => $context->id]
+                );
+                if ($isteacher) {
+                    $DB->delete_records('local_courseinsights_summary', ['courseid' => $context->instanceid]);
+                }
             }
         }
     }
@@ -250,6 +294,16 @@ class provider implements
                FROM {local_courseinsights_atrisk}
               WHERE courseid = :courseid",
             ['courseid' => $context->instanceid]
+        );
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT ra.userid
+               FROM {local_courseinsights_summary} s
+               JOIN {context} ctx ON ctx.instanceid = s.courseid AND ctx.contextlevel = :contextlevel
+               JOIN {role_assignments} ra ON ra.contextid = ctx.id
+               JOIN {role} r ON r.id = ra.roleid AND r.archetype = 'editingteacher'
+              WHERE s.courseid = :courseid",
+            ['courseid' => $context->instanceid, 'contextlevel' => CONTEXT_COURSE]
         );
     }
 
@@ -285,5 +339,18 @@ class provider implements
             "courseid = :courseid AND userid {$insql}",
             $params
         );
+
+        [$teacherinsql, $teacherparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'tuid');
+        $teacherparams['tctxid'] = $context->id;
+        $hasaffectedteacher = $DB->record_exists_sql(
+            "SELECT 1 FROM {role_assignments} ra
+               JOIN {role} r ON r.id = ra.roleid
+              WHERE ra.userid {$teacherinsql} AND ra.contextid = :tctxid
+                AND r.archetype = 'editingteacher'",
+            $teacherparams
+        );
+        if ($hasaffectedteacher) {
+            $DB->delete_records('local_courseinsights_summary', ['courseid' => $context->instanceid]);
+        }
     }
 }

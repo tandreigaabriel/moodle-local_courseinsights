@@ -86,9 +86,7 @@ Course Insights is a **commercial plugin** distributed under the GNU GPL v3.
 
 A licence key is required to use the plugin. Course Insights is purchased through Moodle Marketplace; licence keys are issued after the Marketplace purchase has been verified.
 
-After purchasing through Moodle Marketplace, submit the post-purchase licence delivery form at [tandreig.com/request-key](https://tandreig.com/request-key). This form is not a separate purchase path; it is used only to match the Marketplace purchase to the customer's Moodle site and delivery email. The form asks for the plugin name, full name, institution or organisation, email address, Moodle site URL, and an optional message. The licence key is sent to the email address provided after the Marketplace payment is confirmed.
-
-Once you receive your key, enter it in **Site administration → Plugins → Local plugins → Course Insights settings → Licence Key** and save. Activation is automatic; no manual steps are needed after that.
+After purchasing through Moodle Marketplace, your licence key will be delivered to the email address used at checkout. Enter the key in **Site administration → Plugins → Local plugins → Course Insights settings → Licence Key** and save. Activation is automatic; no further steps are needed.
 
 ---
 
