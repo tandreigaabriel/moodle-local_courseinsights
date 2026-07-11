@@ -265,6 +265,11 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 
 ## Changelog
 
+### 0.48.0
+- Privacy API extended to cover `local_courseinsights_summary.teachers` (cached editing teacher names)
+- Licence activation uses Moodle `\curl` wrapper with string-keyed options throughout
+- Moodle Marketplace review passed; maturity set to Stable
+
 ### 0.47.0
 - Filter sidebar is now organised into numbered steps: courses, main date range, optional comparison period, and activity/student scope
 - Main and comparison date labels were renamed to make it clearer which period controls the dashboard and which period is only the baseline
