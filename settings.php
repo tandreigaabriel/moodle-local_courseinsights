@@ -186,6 +186,19 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
+    $settings->add(new admin_setting_configselect(
+        'local_courseinsights/monthlytrendmonths',
+        get_string('monthlytrendmonths', 'local_courseinsights'),
+        get_string('monthlytrendmonths_desc', 'local_courseinsights'),
+        6,
+        [
+            3  => get_string('monthlytrendmonths_3', 'local_courseinsights'),
+            6  => get_string('monthlytrendmonths_6', 'local_courseinsights'),
+            9  => get_string('monthlytrendmonths_9', 'local_courseinsights'),
+            12 => get_string('monthlytrendmonths_12', 'local_courseinsights'),
+        ]
+    ));
+
     $settings->add(new admin_setting_heading(
         'local_courseinsights/brandheading',
         get_string('brandheading', 'local_courseinsights'),

@@ -1217,11 +1217,12 @@ class report_service {
      * @return array Site overview payload.
      */
     private static function build_site_overview_payload(int $atriskdays): array {
+        $months = max(3, min(12, (int) get_config('local_courseinsights', 'monthlytrendmonths') ?: 6));
         return [
             'kpis'         => self::get_site_kpis(),
             'topenrol'     => self::get_top_courses_by_enrolment(10),
             'topcompl'     => self::get_top_courses_by_completion(10),
-            'monthlytrend' => self::get_monthly_active_users(12),
+            'monthlytrend' => self::get_monthly_active_users($months),
             'generated'    => time(),
         ];
     }
