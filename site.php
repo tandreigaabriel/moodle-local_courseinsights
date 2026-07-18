@@ -195,6 +195,10 @@ if ($canmanage) {
         'href'  => (new moodle_url('/local/courseinsights/risk_rules.php'))->out(false),
         'class' => 'ci-tab',
     ]);
+    echo html_writer::tag('a', get_string('tab_taskstatus', 'local_courseinsights'), [
+        'href'  => (new moodle_url('/local/courseinsights/admin_tasks.php'))->out(false),
+        'class' => 'ci-tab',
+    ]);
 }
 echo html_writer::end_div();
 

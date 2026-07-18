@@ -96,6 +96,12 @@ echo html_writer::tag('a', get_string('tab_interventionreports', 'local_coursein
     'href'  => $url->out(false),
     'class' => 'ci-tab ci-tab--active',
 ]);
+if ($canmanage) {
+    echo html_writer::tag('a', get_string('tab_taskstatus', 'local_courseinsights'), [
+        'href'  => (new moodle_url('/local/courseinsights/admin_tasks.php'))->out(false),
+        'class' => 'ci-tab',
+    ]);
+}
 echo html_writer::end_div();
 
 echo html_writer::start_div('local-courseinsights-dashboard');

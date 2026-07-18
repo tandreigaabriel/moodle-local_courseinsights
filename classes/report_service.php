@@ -959,50 +959,58 @@ class report_service {
         global $DB;
 
         $filters = [
-            'courseid' => 0,
-            'startdate' => '',
-            'enddate' => '',
-            'activitytype' => 'all',
+            'courseid'      => 0,
+            'startdate'     => '',
+            'enddate'       => '',
+            'activitytype'  => 'all',
             'studentstatus' => 'active',
-            'usecache' => 0,
+            'usecache'      => 0,
         ];
 
+        mtrace('rebuild_summary_cache: running aggregate query…');
         $records = self::get_course_overview($filters, 0, 0);
+        $count   = count($records);
+        mtrace("rebuild_summary_cache: {$count} courses loaded — writing snapshot…");
 
         $transaction = $DB->start_delegated_transaction();
 
         $DB->delete_records('local_courseinsights_summary', [
             'periodstart' => 0,
-            'periodend' => 0,
+            'periodend'   => 0,
         ]);
 
-        $now = time();
+        $now   = time();
+        $batch = [];
 
         foreach ($records as $record) {
-            $summary = new \stdClass();
-            $summary->courseid = $record->id;
-            $summary->periodstart = 0;
-            $summary->periodend = 0;
-            $summary->enrolledstudents = (int) $record->enrolledstudents;
-            $summary->assignments = (int) $record->assignments;
-            $summary->submittedassignments = (int) $record->submittedassignments;
-            $summary->quizzes = (int) $record->quizzes;
-            $summary->quizattempts = (int) $record->quizattempts;
-            $summary->exams = (int) $record->exams;
-            $summary->examattempts = (int) $record->examattempts;
-            $summary->miniquizzes = (int) $record->miniquizzes;
-            $summary->miniquizattempts = (int) $record->miniquizattempts;
-            $summary->avgquizgrade = $record->avgquizgrade;
-            $summary->completionrate = isset($record->completionrate) ? (float) $record->completionrate : null;
-            $summary->lastactivity = !empty($record->lastactivity) ? (int) $record->lastactivity : null;
-            $summary->teachers = $record->teachers ?? null;
-            $summary->timecreated = $now;
-            $summary->timemodified = $now;
+            $batch[] = (object) [
+                'courseid'             => $record->id,
+                'periodstart'          => 0,
+                'periodend'            => 0,
+                'enrolledstudents'     => (int) $record->enrolledstudents,
+                'assignments'          => (int) $record->assignments,
+                'submittedassignments' => (int) $record->submittedassignments,
+                'quizzes'              => (int) $record->quizzes,
+                'quizattempts'         => (int) $record->quizattempts,
+                'exams'                => (int) $record->exams,
+                'examattempts'         => (int) $record->examattempts,
+                'miniquizzes'          => (int) $record->miniquizzes,
+                'miniquizattempts'     => (int) $record->miniquizattempts,
+                'avgquizgrade'         => $record->avgquizgrade,
+                'completionrate'       => isset($record->completionrate) ? (float) $record->completionrate : null,
+                'lastactivity'         => !empty($record->lastactivity) ? (int) $record->lastactivity : null,
+                'teachers'             => $record->teachers ?? null,
+                'timecreated'          => $now,
+                'timemodified'         => $now,
+            ];
+        }
 
-            $DB->insert_record('local_courseinsights_summary', $summary);
+        if (!empty($batch)) {
+            $DB->insert_records('local_courseinsights_summary', $batch);
         }
 
         $transaction->allow_commit();
+        mtrace("rebuild_summary_cache: {$count} rows committed.");
     }
 
     /**
@@ -1056,41 +1064,149 @@ class report_service {
      *
      * Called by the overnight build_summary_cache scheduled task. One row is
      * kept per course and updated in place, so repeated task runs do not
-     * duplicate snapshots.
+     * duplicate snapshots. Courses with a snapshot built within the last 6 hours
+     * are skipped so interrupted runs can resume without reprocessing all courses.
      *
      * @return void
      */
     public static function rebuild_course_detail_snapshots(): void {
         global $DB;
 
-        $courses = $DB->get_records_select('course', 'id <> :site AND visible = 1', ['site' => SITEID], 'id ASC', 'id');
-        $now = time();
+        $courses     = $DB->get_records_select('course', 'id <> :site AND visible = 1', ['site' => SITEID], 'id ASC', 'id');
+        $total       = count($courses);
+        $now         = time();
+        $freshcutoff = $now - 21600; // 6 hours — skip courses already built this cycle.
+        $queued      = 0;
+        $skipped     = 0;
+
+        // Pre-load existing snapshot metadata to avoid one SELECT per course.
+        $existing = $DB->get_records('local_courseinsights_detail', [], '', 'courseid, timemodified');
+
+        mtrace("rebuild_course_detail_snapshots: {$total} visible courses — queuing ad-hoc tasks…");
 
         foreach ($courses as $course) {
             $courseid = (int) $course->id;
-            $payload = self::build_course_detail_snapshot_payload($courseid);
-            $payloadjson = json_encode($payload) ?: '[]';
 
-            $record = $DB->get_record(
-                'local_courseinsights_detail',
-                ['courseid' => $courseid],
-                'id',
-                IGNORE_MISSING
-            );
-
-            if ($record) {
-                $record->payload = $payloadjson;
-                $record->timemodified = $now;
-                $DB->update_record('local_courseinsights_detail', $record);
-            } else {
-                $record = (object) [
-                    'courseid' => $courseid,
-                    'payload' => $payloadjson,
-                    'timecreated' => $now,
-                    'timemodified' => $now,
-                ];
-                $DB->insert_record('local_courseinsights_detail', $record);
+            if (isset($existing[$courseid]) && (int) $existing[$courseid]->timemodified > $freshcutoff) {
+                $skipped++;
+                continue;
             }
+
+            $task = new \local_courseinsights\task\build_course_detail_snapshot();
+            $task->set_custom_data(['courseid' => $courseid]);
+            \core\task\manager::queue_adhoc_task($task, true);
+            $queued++;
+        }
+
+        mtrace("rebuild_course_detail_snapshots: {$queued} tasks queued, {$skipped} fresh courses skipped.");
+    }
+
+    /**
+     * Incrementally updates the pre-aggregated daily event-count rollup for one course.
+     *
+     * On the first call (empty rollup) the full logstore history for that course is
+     * aggregated in a single GROUP BY query and stored row-by-row. On every subsequent
+     * call only records since the last stored day-bucket are processed, so the logstore
+     * scan is bounded to at most a few days of new records.
+     *
+     * @param int $courseid Course ID.
+     * @return void
+     */
+    private static function build_logstore_rollup(int $courseid): void {
+        global $DB;
+
+        // Last day already stored in the rollup (0 if table is empty for this course).
+        $lastbucket = (int) $DB->get_field_sql(
+            'SELECT COALESCE(MAX(logdate), 0) FROM {local_courseinsights_log_rollup} WHERE courseid = :cid',
+            ['cid' => $courseid]
+        );
+
+        // Re-process from lastbucket (handles partial-day records on the last stored day).
+        $sincets = $lastbucket * 86400;
+
+        // One GROUP BY over logstore — no ORDER BY, bounded by timecreated index.
+        $rows = $DB->get_records_sql(
+            'SELECT FLOOR(timecreated / 86400) AS daybucket, COUNT(*) AS cnt
+               FROM {logstore_standard_log}
+              WHERE courseid = :cid
+                AND timecreated >= :since
+                AND userid > 0
+              GROUP BY daybucket',
+            ['cid' => $courseid, 'since' => $sincets]
+        );
+
+        if (empty($rows)) {
+            return;
+        }
+
+        // Pre-load existing rollup rows for the affected date range for efficient upsert.
+        $existing = $DB->get_records_sql(
+            'SELECT logdate, id FROM {local_courseinsights_log_rollup}
+              WHERE courseid = :cid AND logdate >= :since',
+            ['cid' => $courseid, 'since' => $lastbucket]
+        );
+        $existingmap = [];
+        foreach ($existing as $e) {
+            $existingmap[(int) $e->logdate] = (int) $e->id;
+        }
+
+        foreach ($rows as $row) {
+            $bucket = (int) $row->daybucket;
+            $cnt    = (int) $row->cnt;
+
+            if (isset($existingmap[$bucket])) {
+                $DB->update_record('local_courseinsights_log_rollup', (object) [
+                    'id'          => $existingmap[$bucket],
+                    'event_count' => $cnt,
+                ]);
+            } else {
+                $DB->insert_record('local_courseinsights_log_rollup', (object) [
+                    'courseid'    => $courseid,
+                    'logdate'     => $bucket,
+                    'event_count' => $cnt,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Rebuilds and persists the chart payload snapshot for one course.
+     *
+     * Called by the build_course_detail_snapshot ad-hoc task. Updates the
+     * logstore rollup first, then builds the six chart payloads from fast
+     * plugin-owned tables or bounded logstore queries.
+     *
+     * @param int $courseid Course ID.
+     * @return void
+     */
+    public static function rebuild_single_course_detail_snapshot(int $courseid): void {
+        global $DB;
+
+        $now         = time();
+        self::build_logstore_rollup($courseid);
+        $payload     = self::build_course_detail_snapshot_payload($courseid);
+        $payloadjson = json_encode($payload) ?: '[]';
+
+        $existing = $DB->get_record(
+            'local_courseinsights_detail',
+            ['courseid' => $courseid],
+            'id',
+            IGNORE_MISSING
+        );
+
+        if ($existing) {
+            $DB->update_record('local_courseinsights_detail', (object) [
+                'id'           => $existing->id,
+                'payload'      => $payloadjson,
+                'timemodified' => $now,
+            ]);
+        } else {
+            $DB->insert_record('local_courseinsights_detail', (object) [
+                'courseid'     => $courseid,
+                'payload'      => $payloadjson,
+                'timecreated'  => $now,
+                'timemodified' => $now,
+            ]);
         }
     }
 
@@ -1209,13 +1325,13 @@ class report_service {
     private static function rebuild_atrisk_snapshot(int $days): void {
         global $DB;
 
-        $days = max(1, $days);
+        $days   = max(1, $days);
         $cutoff = time() - ($days * DAYSECS);
-        $now = time();
+        $now    = time();
 
         $DB->delete_records('local_courseinsights_atrisk', ['threshold' => $days]);
 
-        $rows = $DB->get_recordset_sql(
+        $rows  = $DB->get_recordset_sql(
             "SELECT u.id AS userid,
                     c.id AS courseid,
                     MAX(COALESCE(la.timeaccess, 0)) AS lastaccess,
@@ -1242,20 +1358,25 @@ class report_service {
             1000
         );
 
+        $batch = [];
         foreach ($rows as $row) {
             $lastaccess = (int) $row->lastaccess;
-            $basetime = $lastaccess > 0 ? $lastaccess : (int) $row->enroltime;
-            $snapshot = (object) [
-                'userid' => (int) $row->userid,
-                'courseid' => (int) $row->courseid,
-                'threshold' => $days,
-                'lastaccess' => $lastaccess,
+            $basetime   = $lastaccess > 0 ? $lastaccess : (int) $row->enroltime;
+            $batch[]    = (object) [
+                'userid'       => (int) $row->userid,
+                'courseid'     => (int) $row->courseid,
+                'threshold'    => $days,
+                'lastaccess'   => $lastaccess,
                 'daysinactive' => $basetime > 0 ? (int) floor(($now - $basetime) / DAYSECS) : null,
                 'timemodified' => $now,
             ];
-            $DB->insert_record('local_courseinsights_atrisk', $snapshot);
         }
         $rows->close();
+
+        if (!empty($batch)) {
+            $DB->insert_records('local_courseinsights_atrisk', $batch);
+        }
+        mtrace('rebuild_atrisk_snapshot: ' . count($batch) . ' at-risk rows written.');
     }
 
 
@@ -2226,21 +2347,22 @@ class report_service {
         $weekstart = $today - ($dow - 1) * DAYSECS;
         $startday  = $weekstart - 51 * 7 * DAYSECS; // 52 weeks total.
 
-        $rows = $DB->get_recordset_sql('
-            SELECT timecreated
-              FROM {logstore_standard_log}
-             WHERE courseid = :courseid
-               AND timecreated >= :since
-               AND userid > 0
-             ORDER BY timecreated ASC
-        ', ['courseid' => $courseid, 'since' => $startday]);
+        // Read pre-aggregated daily counts from the rollup table — no logstore access here.
+        $startbucket = (int) ($startday / 86400);
+
+        $rows = $DB->get_records_sql(
+            'SELECT logdate, event_count
+               FROM {local_courseinsights_log_rollup}
+              WHERE courseid = :courseid
+                AND logdate >= :since',
+            ['courseid' => $courseid, 'since' => $startbucket]
+        );
 
         $lookup = [];
         foreach ($rows as $row) {
-            $logday = date('Y-m-d', (int) $row->timecreated);
-            $lookup[$logday] = ($lookup[$logday] ?? 0) + 1;
+            $logday = date('Y-m-d', (int) $row->logdate * 86400);
+            $lookup[$logday] = (int) $row->event_count;
         }
-        $rows->close();
 
         if (empty($lookup)) {
             return [];
@@ -2453,29 +2575,29 @@ class report_service {
         $months = max(1, min(24, $months));
         $cutoff = strtotime("-{$months} months");
 
-        $rows = $DB->get_recordset_sql(
-            "SELECT userid, timecreated
+        // Aggregate per (day, user) in the DB — avoids streaming every log row and removes the sort.
+        $rows = $DB->get_records_sql(
+            "SELECT FLOOR(timecreated / 86400) AS daybucket, userid, COUNT(*) AS events
                FROM {logstore_standard_log}
               WHERE courseid <> :site
                 AND userid > 0
                 AND timecreated > :cutoff
-              ORDER BY timecreated ASC",
+              GROUP BY daybucket, userid",
             ['site' => SITEID, 'cutoff' => $cutoff]
         );
 
         $buckets = [];
         foreach ($rows as $r) {
-            $yearmonth = date('Y-m', (int) $r->timecreated);
+            $yearmonth = date('Y-m', (int) $r->daybucket * 86400);
             if (!isset($buckets[$yearmonth])) {
                 $buckets[$yearmonth] = [
-                    'users' => [],
+                    'users'  => [],
                     'events' => 0,
                 ];
             }
             $buckets[$yearmonth]['users'][(int) $r->userid] = true;
-            $buckets[$yearmonth]['events']++;
+            $buckets[$yearmonth]['events'] += (int) $r->events;
         }
-        $rows->close();
 
         $result = [];
         foreach ($buckets as $yearmonth => $bucket) {

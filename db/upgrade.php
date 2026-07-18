@@ -257,5 +257,71 @@ function xmldb_local_courseinsights_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026071502, 'local', 'courseinsights');
     }
 
+    if ($oldversion < 2026071903) {
+        // Seed default risk rules on sites that did a fresh install (which skips
+        // upgrade steps) and therefore never got the seeding from step 2026071500.
+        if (!$DB->record_exists('local_courseinsights_risk_rules', [])) {
+            $now = time();
+            foreach (\local_courseinsights\risk_service::get_default_rules() as $row) {
+                [$ruletype, $label, $threshold, $weight, $enabled, $sortorder] = $row;
+                $DB->insert_record('local_courseinsights_risk_rules', (object) [
+                    'ruletype'     => $ruletype,
+                    'label'        => $label,
+                    'threshold'    => $threshold,
+                    'weight'       => $weight,
+                    'enabled'      => $enabled,
+                    'sortorder'    => $sortorder,
+                    'timecreated'  => $now,
+                    'timemodified' => $now,
+                ]);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026071903, 'local', 'courseinsights');
+    }
+
+    if ($oldversion < 2026071902) {
+        // Create log_rollup table for incremental pre-aggregated daily event counts per course.
+        $table = new xmldb_table('local_courseinsights_log_rollup');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
+        $table->add_field('logdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
+        $table->add_field('event_count', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('coursedate', XMLDB_INDEX_UNIQUE, ['courseid', 'logdate']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026071902, 'local', 'courseinsights');
+    }
+
+    if ($oldversion < 2026071905) {
+        // Add composite index on the core logstore table to speed up per-course
+        // COUNT(DISTINCT userid) queries used by the summary cache builder.
+        // Without this index MySQL does a full table scan per course.
+        $table = new xmldb_table('logstore_standard_log');
+        $index = new xmldb_index('logsstanlog_coutim_ix', XMLDB_INDEX_NOTUNIQUE, ['courseid', 'timecreated']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+        upgrade_plugin_savepoint(true, 2026071905, 'local', 'courseinsights');
+    }
+
+    if ($oldversion < 2026071906) {
+        // Remove empty-string DEFAULT from CHAR NOT NULL columns — XMLDB rejects DEFAULT ''
+        // on CHAR fields; the plugin code always supplies values on insert so no default is needed.
+        $table = new xmldb_table('local_courseinsights_risk_rules');
+        $field = new xmldb_field('ruletype', XMLDB_TYPE_CHAR, '50', null, XMLDB_NOTNULL);
+        $dbman->change_field_default($table, $field);
+
+        $field = new xmldb_field('label', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL);
+        $dbman->change_field_default($table, $field);
+
+        $table = new xmldb_table('local_courseinsights_interventions');
+        $field = new xmldb_field('title', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL);
+        $dbman->change_field_default($table, $field);
+
+        upgrade_plugin_savepoint(true, 2026071906, 'local', 'courseinsights');
+    }
+
     return true;
 }

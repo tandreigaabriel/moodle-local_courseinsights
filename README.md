@@ -294,6 +294,15 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 
 ## Changelog
 
+### 0.60.4
+- Schema fix: removed invalid empty-string DEFAULT from CHAR NOT NULL columns (`ruletype`, `label`, `title`) that triggered XMLDB debug warnings during upgrade and uninstall
+
+### 0.60.3
+- Performance: composite index `(courseid, timecreated)` added to `mdl_logstore_standard_log`; reduces the nightly cache build task from 80+ minutes to seconds on sites with large logstore tables
+
+### 0.60.2
+- Performance: 52-week engagement heatmap now reads from a pre-aggregated daily rollup table (`local_courseinsights_log_rollup`) instead of scanning logstore directly; heatmap data is built incrementally by the nightly cache task
+
 ### 0.57.0
 - Student Engagement Since Intervention: every intervention case detail page now shows a before/after comparison table for course visits, forum posts, assignment submissions, and quiz attempts; trend badges use per-day rates for fair comparison; visible after 3 days from case creation
 

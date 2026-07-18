@@ -43,25 +43,21 @@ class build_summary_cache extends \core\task\scheduled_task {
      * @return void
      */
     public function execute(): void {
+        mtrace('[1/4] Building course summary cache…');
         \local_courseinsights\report_service::rebuild_summary_cache();
         mtrace(get_string('cachebuilt', 'local_courseinsights'));
 
+        mtrace('[2/4] Building site KPI snapshot…');
         \local_courseinsights\report_service::rebuild_site_kpis_cache();
         mtrace(get_string('sitecachebuilt', 'local_courseinsights'));
 
+        mtrace('[3/4] Building course detail snapshots…');
         \local_courseinsights\report_service::rebuild_course_detail_snapshots();
         mtrace(get_string('detailcachebuilt', 'local_courseinsights'));
 
-        $result = \local_courseinsights\report_service::push_webhook();
-        if ($result['httpcode'] === 0 && $result['success']) {
-            mtrace(get_string('webhookskipped', 'local_courseinsights'));
-        } else if ($result['success']) {
-            mtrace(get_string('webhooksent', 'local_courseinsights', $result['httpcode']));
-        } else {
-            mtrace(get_string('webhookfailed', 'local_courseinsights', (object)[
-                'httpcode' => $result['httpcode'],
-                'error'    => $result['error'],
-            ]));
-        }
+        mtrace('[4/4] Queuing webhook task…');
+        $webhooktask = new \local_courseinsights\task\send_webhook();
+        \core\task\manager::queue_adhoc_task($webhooktask, true);
+        mtrace('[4/4] Webhook task queued.');
     }
 }

@@ -100,8 +100,8 @@
     <TABLE NAME="local_courseinsights_risk_rules" COMMENT="Administrator-configured student risk rules">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="ruletype" TYPE="char" LENGTH="50" NOTNULL="true" DEFAULT=""/>
-        <FIELD NAME="label" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT=""/>
+        <FIELD NAME="ruletype" TYPE="char" LENGTH="50" NOTNULL="true"/>
+        <FIELD NAME="label" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="threshold" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="weight" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
@@ -143,7 +143,7 @@
         <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="assignedto" TYPE="int" LENGTH="10" NOTNULL="false"/>
-        <FIELD NAME="title" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT=""/>
+        <FIELD NAME="title" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="status" TYPE="char" LENGTH="30" NOTNULL="true" DEFAULT="new"/>
         <FIELD NAME="riskscore" TYPE="int" LENGTH="3" NOTNULL="false"/>
         <FIELD NAME="risklevel" TYPE="char" LENGTH="10" NOTNULL="false"/>
@@ -178,6 +178,20 @@
       <INDEXES>
         <INDEX NAME="interventionid" UNIQUE="false" FIELDS="interventionid"/>
         <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_courseinsights_log_rollup" COMMENT="Pre-aggregated daily event counts per course, built incrementally from logstore_standard_log">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="logdate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Day bucket: FLOOR(unix_timestamp / 86400)"/>
+        <FIELD NAME="event_count" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="coursedate" UNIQUE="true" FIELDS="courseid,logdate"/>
       </INDEXES>
     </TABLE>
   </TABLES>
