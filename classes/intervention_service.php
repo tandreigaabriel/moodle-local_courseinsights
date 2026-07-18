@@ -54,12 +54,12 @@ class intervention_service {
     /**
      * Creates a new intervention case and returns its ID.
      *
-     * @param int    $userid     Student user ID.
-     * @param int    $courseid   Course ID.
-     * @param string $title      Case title.
-     * @param int    $riskscore  Risk score at time of creation (nullable).
-     * @param string $risklevel  Risk level string (nullable).
-     * @param int    $createdby  Staff user ID creating the case.
+     * @param int         $userid     Student user ID.
+     * @param int         $courseid   Course ID.
+     * @param string      $title      Case title.
+     * @param int|null    $riskscore  Risk score at time of creation.
+     * @param string|null $risklevel  Risk level string.
+     * @param int         $createdby  Staff user ID creating the case.
      * @return int New record ID.
      */
     public static function create(
