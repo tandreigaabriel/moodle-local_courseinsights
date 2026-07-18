@@ -134,9 +134,10 @@ if ($action === 'sendmessage') {
 }
 
 // Load data.
-$student = $DB->get_record('user', ['id' => $intervention->userid], 'id,firstname,lastname', IGNORE_MISSING);
-$course  = $DB->get_record('course', ['id' => $intervention->courseid], 'id,fullname', IGNORE_MISSING);
-$notes   = \local_courseinsights\intervention_service::get_notes($id, $canviewprivate);
+$student    = $DB->get_record('user', ['id' => $intervention->userid], 'id,firstname,lastname', IGNORE_MISSING);
+$course     = $DB->get_record('course', ['id' => $intervention->courseid], 'id,fullname', IGNORE_MISSING);
+$notes      = \local_courseinsights\intervention_service::get_notes($id, $canviewprivate);
+$staffusers = get_users_by_capability($context, 'local/courseinsights:createintervention');
 
 $studentname = $student ? trim($student->firstname . ' ' . $student->lastname) : '?';
 $coursename  = $course ? format_string($course->fullname) : '?';
@@ -277,6 +278,25 @@ if ($canmanage) {
         }
         $skey = \local_courseinsights\intervention_service::status_string_key($s);
         echo html_writer::tag('option', get_string($skey, 'local_courseinsights'), $attrs);
+    }
+    echo html_writer::end_tag('select');
+    echo html_writer::end_div();
+
+    // Assignedto select.
+    echo html_writer::start_div('ci-form-row');
+    echo html_writer::tag(
+        'label',
+        get_string('intervention_col_assignedto', 'local_courseinsights'),
+        ['for' => 'ci_assignedto', 'class' => 'ci-form-label']
+    );
+    echo html_writer::start_tag('select', ['id' => 'ci_assignedto', 'name' => 'assignedto', 'class' => 'ci-filter-select']);
+    echo html_writer::tag('option', get_string('intervention_unassigned', 'local_courseinsights'), ['value' => '']);
+    foreach ($staffusers as $su) {
+        $attrs = ['value' => $su->id];
+        if (!empty($intervention->assignedto) && (int) $intervention->assignedto === (int) $su->id) {
+            $attrs['selected'] = 'selected';
+        }
+        echo html_writer::tag('option', fullname($su), $attrs);
     }
     echo html_writer::end_tag('select');
     echo html_writer::end_div();
