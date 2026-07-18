@@ -2575,8 +2575,7 @@ class report_service {
         $months = max(1, min(24, $months));
         $cutoff = strtotime("-{$months} months");
 
-        // Aggregate per (day, user) in the DB — avoids streaming every log row and removes the sort.
-        $rows = $DB->get_records_sql(
+        $rs = $DB->get_recordset_sql(
             "SELECT FLOOR(timecreated / 86400) AS daybucket, userid, COUNT(*) AS events
                FROM {logstore_standard_log}
               WHERE courseid <> :site
@@ -2587,7 +2586,7 @@ class report_service {
         );
 
         $buckets = [];
-        foreach ($rows as $r) {
+        foreach ($rs as $r) {
             $yearmonth = date('Y-m', (int) $r->daybucket * 86400);
             if (!isset($buckets[$yearmonth])) {
                 $buckets[$yearmonth] = [
@@ -2598,6 +2597,7 @@ class report_service {
             $buckets[$yearmonth]['users'][(int) $r->userid] = true;
             $buckets[$yearmonth]['events'] += (int) $r->events;
         }
+        $rs->close();
 
         $result = [];
         foreach ($buckets as $yearmonth => $bucket) {
