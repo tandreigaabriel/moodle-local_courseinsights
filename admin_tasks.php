@@ -132,7 +132,7 @@ echo html_writer::end_div();
 
 echo html_writer::start_div('local-courseinsights-dashboard');
 
-// ── Scheduled tasks ───────────────────────────────────────────────────────────
+// Scheduled tasks.
 echo html_writer::start_div('ci-chart-card ci-chart-card--wide');
 echo html_writer::tag('h2', get_string('taskstatus_scheduled_heading', 'local_courseinsights'), ['class' => 'ci-chart-title']);
 
@@ -160,7 +160,10 @@ if (empty($scheduled)) {
             : '—';
 
         if ($task->disabled) {
-            $badge = html_writer::span(get_string('taskstatus_disabled', 'local_courseinsights'), 'ci-risk-badge ci-risk-badge--low');
+            $badge = html_writer::span(
+                get_string('taskstatus_disabled', 'local_courseinsights'),
+                'ci-risk-badge ci-risk-badge--low'
+            );
         } else if ($task->faildelay > 0) {
             $badge = html_writer::span(
                 get_string('taskstatus_failed', 'local_courseinsights') . ' (' . format_time((int) $task->faildelay) . ')',
@@ -183,7 +186,7 @@ if (empty($scheduled)) {
 }
 echo html_writer::end_div();
 
-// ── Ad-hoc queue ─────────────────────────────────────────────────────────────
+// Ad-hoc queue.
 echo html_writer::start_div('ci-chart-card ci-chart-card--wide');
 echo html_writer::tag('h2', get_string('taskstatus_adhoc_heading', 'local_courseinsights'), ['class' => 'ci-chart-title']);
 
@@ -226,7 +229,7 @@ if (empty($adhoc)) {
 }
 echo html_writer::end_div();
 
-// ── Snapshot & rollup status ──────────────────────────────────────────────────
+// Snapshot and rollup status.
 echo html_writer::start_div('ci-chart-card ci-chart-card--wide');
 echo html_writer::tag('h2', get_string('taskstatus_snapshot_heading', 'local_courseinsights'), ['class' => 'ci-chart-title']);
 
