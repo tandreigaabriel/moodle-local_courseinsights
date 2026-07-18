@@ -6,9 +6,9 @@
 
 ## What is Course Insights?
 
-**Course Insights** gives Moodle administrators and managers a single place to see how every course on their site is performing — without digging through individual gradebooks or running manual reports.
+**Course Insights** gives Moodle administrators and managers a single place to see how every course on their site is performing, identify at-risk students, and track intervention cases — without digging through individual gradebooks or running manual reports.
 
-Install it once, point your browser to **Site administration → Reports → Course Insights**, and immediately see enrolment numbers, submission rates, quiz activity, student health scores, and last activity dates across all your courses — filtered, sorted, and ready to export.
+Install it once, point your browser to **Site administration → Reports → Course Insights**, and immediately see enrolment numbers, submission rates, quiz activity, student health scores, and last activity dates across all your courses — filtered, sorted, and ready to export. A configurable risk scoring engine flags students who are falling behind, and a built-in intervention tracker lets staff open, manage, and resolve cases with a full audit trail.
 
 After licence activation, the core reports work without changing student-facing pages. Optional features such as reminders, alerts, digest emails, branding, and webhooks can be enabled from the plugin settings.
 
@@ -33,7 +33,7 @@ Click "Detailed Report" on any course card to open a full breakdown:
 - Completion rate hero with enrolled students and teachers
 - **Grade distribution** histogram across all assignments and quizzes
 - **52-week engagement heatmap** — see when students are active throughout the year
-- **Student activity table** — per-student last access, submissions, and quiz attempts
+- **Student activity table** — per-student last access, course visits, forum posts, submissions, and quiz attempts
 - **Submission timeline** — 30-day daily submission bar chart
 - **Quiz score breakdown** — average, min, max, and pass rate per quiz
 - **Print / PDF view** — print-ready layout with one click
@@ -69,6 +69,27 @@ Click "Detailed Report" on any course card to open a full breakdown:
 ### White-label branding
 
 - Add your institution's name, logo, and accent colour to replace the default Course Insights header on every page
+
+### Student risk scoring
+
+- **Configurable rules** — enable or disable individual risk rules (inactivity, low quiz scores, low submission rate, low completion, never accessed) and set the threshold and weight for each
+- **Composite risk score** — a 0–100 score is calculated nightly per student per course from the weighted rules; students are banded into Low (0–29), Medium (30–59), High (60–79), and Critical (80–100) risk levels
+- **Risk badges** — colour-coded badges appear on the at-risk student list and on intervention detail pages so risk level is visible at a glance
+- **Risk Rules admin page** — managers can adjust thresholds and weights without touching code; a level guide shows the score ranges for each level
+- **Nightly recalculation** — the existing cache task rebuilds all risk scores so the data is always fresh when staff arrive in the morning
+
+### Intervention case management
+
+- **Create interventions** from any at-risk student row — one click opens a new case pre-filled with the student, course, and current risk score
+- **Case list** — filter open interventions by status, course, or time period; status badges make progress visible at a glance
+- **Status workflow** — cases move through New → In Progress → On Hold → Resolved → Closed; managers can update status and assign cases to other staff members
+- **Follow-up dates** — set a target follow-up date on any case; the scheduled task sends a Moodle notification to the assignee (or creator) when the date arrives
+- **Notes timeline** — add timestamped notes to any case; managers can mark notes private so only users with the `viewprivatenotes` capability can see them
+- **Manager dashboard** — the Interventions tab shows all cases site-wide to managers; teaching staff see only cases they created or are assigned to
+- **Intervention Reports** — a manager-only reports page shows resolution rates, average days to resolve, cases by status, and a per-staff caseload breakdown, filterable by last 30, 90, or 365 days or all time
+- **Adviser caseload ("My Cases")** — staff see a personal view of only their assigned or created cases; cases are sorted by urgency (overdue follow-ups first, then due within 7 days, then active, then no date set); overdue and due-soon badges are shown inline
+- **Student Engagement Since Intervention** — every case detail page shows a before/after comparison of course visits, forum posts, assignment submissions, and quiz attempts for the 30 days before the case was opened vs. since it was opened; trend badges (↑ Improving / ↓ Declining / → Stable) use per-day rates so short windows compare fairly; visible after the case is 3 days old
+- **Send Message to Student** — send a Moodle message directly to the student from inside any intervention case; choose from two configurable templates (Initial Contact and Follow-up) with `{firstname}`, `{lastname}`, `{course}`, and `{adviser}` placeholders; the send is automatically logged as a note on the case timeline
 
 ---
 
@@ -178,7 +199,11 @@ Example: if the threshold is 14 days and a reminder is sent today, the same stud
 |---|---|---|
 | `local/courseinsights:view` | Manager, Editing teacher | View the dashboard and course detail pages |
 | `local/courseinsights:export` | Manager, Editing teacher | Export reports as CSV or xlsx |
-| `local/courseinsights:manage` | Manager | Manage plugin settings |
+| `local/courseinsights:manage` | Manager | Manage plugin settings and risk rules |
+| `local/courseinsights:viewrisk` | Manager, Editing teacher | See risk score and risk level badges |
+| `local/courseinsights:createintervention` | Manager, Editing teacher | Create and view intervention cases |
+| `local/courseinsights:manageinterventions` | Manager | Update case status, assign cases, and access the Intervention Reports page |
+| `local/courseinsights:viewprivatenotes` | Manager | Read and write private notes on intervention cases |
 
 ---
 
@@ -200,6 +225,10 @@ All settings are at **Site administration → Plugins → Local plugins → Cour
 | Student inactivity threshold | 14 | Number of inactive days used by student reminders and the Site Overview at-risk snapshot |
 | Digest emails | Off | Send weekly or monthly summary emails to managers |
 | Webhook URL | — | POST course data nightly to an external URL |
+| Initial contact — subject | `Checking in about your progress in {course}` | Subject for the initial contact message template |
+| Initial contact — message | *(default body)* | Body for the initial contact message template; supports `{firstname}`, `{lastname}`, `{course}`, `{adviser}` |
+| Follow-up — subject | `Follow-up: your progress in {course}` | Subject for the follow-up message template |
+| Follow-up — message | *(default body)* | Body for the follow-up message template |
 
 ---
 
@@ -264,6 +293,39 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 ---
 
 ## Changelog
+
+### 0.57.0
+- Student Engagement Since Intervention: every intervention case detail page now shows a before/after comparison table for course visits, forum posts, assignment submissions, and quiz attempts; trend badges use per-day rates for fair comparison; visible after 3 days from case creation
+
+### 0.56.0
+- Adviser caseload dashboard (My Cases): staff see a personal filtered view of their assigned or created cases; sorted by urgency with overdue and due-soon badges; count badge on the My Cases tab shows open cases at a glance
+
+### 0.55.0
+- Send Message to Student: staff can message a student directly from an intervention case using configurable Initial Contact and Follow-up templates; sends are automatically logged as case notes
+
+### 0.54.0
+- Forum Posts column added to the Student Activity table on the course detail page — shows the total number of forum posts per student in that course (from `forum_posts` + `forum_discussions`)
+
+### 0.53.0
+- Course Visits column added to the Student Activity table on the course detail page — shows the total number of log events per student in that course (from `logstore_standard_log`)
+
+### 0.52.0
+- Intervention Reports page: managers can view resolution rates, average days to resolve, cases by status, and a per-staff caseload breakdown, filterable by last 30, 90, or 365 days or all time
+- Reports tab added to the Interventions tab bar, visible only to users with `manageinterventions`
+
+### 0.51.0
+- Follow-up date reminders: the nightly cache task sends a Moodle notification to the case assignee (or creator) when an intervention's follow-up date is reached; each follow-up date fires at most once
+
+### 0.50.0
+- Intervention case management: create cases from at-risk students, assign to staff, track status (New / In Progress / On Hold / Resolved / Closed), and set follow-up dates
+- Notes timeline on every case with timestamps and author names; private notes visible only to users with the `viewprivatenotes` capability
+- Manager view shows all cases site-wide; staff see only cases they created or are assigned to
+
+### 0.49.0
+- Student risk scoring: nightly task calculates a 0–100 composite score per student per course from five configurable rules — inactivity, low quiz grade, low submission rate, low completion, and never accessed
+- Risk level bands: Low (0–29), Medium (30–59), High (60–79), Critical (80–100)
+- Risk Rules admin page (`manage` capability): enable/disable rules, set threshold and weight per rule without code changes
+- Risk badges displayed on at-risk student rows and intervention detail pages
 
 ### 0.48.0
 - Privacy API extended to cover `local_courseinsights_summary.teachers` (cached editing teacher names)

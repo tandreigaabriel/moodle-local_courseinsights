@@ -70,4 +70,13 @@ $tasks = [
         'month' => '*',
         'dayofweek' => '1',
     ],
+    [
+        'classname' => 'local_courseinsights\task\followup_reminder_task',
+        'blocking' => 0,
+        'minute' => '0',
+        'hour' => '6',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
 ];

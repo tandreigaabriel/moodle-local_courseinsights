@@ -1959,7 +1959,7 @@ class report_service {
      * for role check avoids duplicates from multiple role assignments).
      *
      * @param int $courseid
-     * @return array Each element: {fullname, lastaccess, hasnoaccess, submissions, quizattempts}
+     * @return array Each element: {fullname, lastaccess, hasnoaccess, visits, forumposts, submissions, quizattempts}
      */
     public static function get_student_activity_table(int $courseid): array {
         global $DB;
@@ -1980,6 +1980,8 @@ class report_service {
             'ctx_level'    => CONTEXT_COURSE,
             'sub_course'   => $courseid,
             'qa_course'    => $courseid,
+            'log_course'   => $courseid,
+            'forum_course' => $courseid,
         ], $roleparams);
 
         $rows = $DB->get_records_sql("
@@ -1991,6 +1993,8 @@ class report_service {
                    u.middlename,
                    u.alternatename,
                    la.timeaccess                                        AS lastaccess,
+                   COALESCE(loglcount.logvisits, 0)                    AS visits,
+                   COALESCE(forumcount.forumposts, 0)                  AS forumposts,
                    (
                        SELECT COUNT(*)
                          FROM {assign_submission} asub
@@ -2012,6 +2016,21 @@ class report_service {
               JOIN {user_enrolments} ue ON ue.userid = u.id
               JOIN {enrol} e            ON e.id = ue.enrolid AND e.courseid = :enrol_course
               LEFT JOIN {user_lastaccess} la ON la.userid = u.id AND la.courseid = :la_course
+              LEFT JOIN (
+                             SELECT userid,
+                                    COUNT(*) AS logvisits
+                               FROM {logstore_standard_log}
+                              WHERE courseid = :log_course
+                              GROUP BY userid
+                         ) loglcount ON loglcount.userid = u.id
+              LEFT JOIN (
+                             SELECT fp.userid,
+                                    COUNT(*) AS forumposts
+                               FROM {forum_posts} fp
+                               JOIN {forum_discussions} fd ON fd.id = fp.discussion
+                              WHERE fd.course = :forum_course
+                              GROUP BY fp.userid
+                         ) forumcount ON forumcount.userid = u.id
              WHERE u.deleted   = 0
                AND u.suspended = 0
                AND ue.status   = 0
@@ -2039,6 +2058,8 @@ class report_service {
                     ? userdate((int)$row->lastaccess, get_string('strftimedate', 'langconfig'))
                     : '-',
                 'hasnoaccess'  => empty($row->lastaccess),
+                'visits'       => (int) $row->visits,
+                'forumposts'   => (int) $row->forumposts,
                 'submissions'  => (int) $row->submissions,
                 'quizattempts' => (int) $row->quizattempts,
             ];

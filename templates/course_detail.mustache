@@ -56,11 +56,13 @@
     * label_engagementheatmap_nodata {string} Message when no log data exists.
     * hasstudentaccess {bool} Whether the current user can see the student activity table.
     * hasstudents {bool} Whether any students are enrolled.
-    * students {array} Per-student rows: {fullname, lastaccess, hasnoaccess, submissions, quizattempts}.
+    * students {array} Per-student rows: {fullname, lastaccess, hasnoaccess, visits, forumposts, submissions, quizattempts}.
     * label_studentactivitytable {string} Section heading for the student table.
     * label_studentactivitytable_nodata {string} Message when no students found.
     * label_col_student {string} Column header: student name.
     * label_col_lastaccess {string} Column header: last access.
+    * label_col_visits {string} Column header: course visits.
+    * label_col_forumposts {string} Column header: forum posts.
     * label_col_submissions {string} Column header: submissions.
     * label_col_quizattempts {string} Column header: quiz attempts.
     * hasquizbreakdown {bool} Whether any quizzes have grade data.
@@ -434,6 +436,8 @@
                     <tr>
                         <th scope="col">{{label_col_student}}</th>
                         <th scope="col">{{label_col_lastaccess}}</th>
+                        <th scope="col">{{label_col_visits}}</th>
+                        <th scope="col">{{label_col_forumposts}}</th>
                         <th scope="col">{{label_col_submissions}}</th>
                         <th scope="col">{{label_col_quizattempts}}</th>
                     </tr>
@@ -443,6 +447,8 @@
                     <tr class="{{#hasnoaccess}}ci-student-table__row--never{{/hasnoaccess}}">
                         <td>{{fullname}}</td>
                         <td>{{lastaccess}}</td>
+                        <td>{{visits}}</td>
+                        <td>{{forumposts}}</td>
                         <td>{{submissions}}</td>
                         <td>{{quizattempts}}</td>
                     </tr>

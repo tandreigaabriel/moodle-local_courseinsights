@@ -56,8 +56,12 @@
     * atrisk_col_course {string}
     * atrisk_col_lastaccess {string}
     * atrisk_col_days {string}
+    * atrisk_col_riskscore {string}
+    * atrisk_col_action {string}
+    * atrisk_intervention_label {string}
+    * has_createintervention {boolean}
     * atrisk_nodata {string}
-    * atrisk_students {array} fullname, coursename, courseurl, lastaccess, daysinactive
+    * atrisk_students {array} fullname, coursename, courseurl, lastaccess, daysinactive, riskscore, risklevellabel, riskbadgeclass, riskreasons, createintervention_url
 
     Example context (json):
     {
@@ -205,6 +209,8 @@
                     <th>{{atrisk_col_course}}</th>
                     <th class="ci-top10-value">{{atrisk_col_lastaccess}}</th>
                     <th class="ci-top10-value">{{atrisk_col_days}}</th>
+                    <th class="ci-top10-value">{{atrisk_col_riskscore}}</th>
+                    {{#has_createintervention}}<th class="ci-top10-value">{{atrisk_col_action}}</th>{{/has_createintervention}}
                 </tr>
             </thead>
             <tbody>
@@ -214,6 +220,16 @@
                     <td><a href="{{courseurl}}">{{coursename}}</a></td>
                     <td class="ci-top10-value">{{lastaccess}}</td>
                     <td class="ci-top10-value">{{daysinactive}}</td>
+                    <td class="ci-top10-value">
+                        <span class="{{riskbadgeclass}}" title="{{riskreasons}}">{{risklevellabel}} ({{riskscore}})</span>
+                    </td>
+                    {{#has_createintervention}}
+                    <td class="ci-top10-value">
+                        {{#createintervention_url}}
+                        <a href="{{createintervention_url}}" class="ci-intervene-btn">{{../atrisk_intervention_label}}</a>
+                        {{/createintervention_url}}
+                    </td>
+                    {{/has_createintervention}}
                 </tr>
                 {{/atrisk_students}}
             </tbody>

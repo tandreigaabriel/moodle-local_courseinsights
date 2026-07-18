@@ -73,6 +73,48 @@ $topcompl     = $cached['topcompl'];
 $monthlytrend = $cached['monthlytrend'];
 $atrisk       = $snapshotmissing ? [] : \local_courseinsights\report_service::get_atrisk_students_from_snapshot($atriskdays, 25);
 
+$cancreateintervention = has_capability('local/courseinsights:createintervention', $context);
+$canmanage             = has_capability('local/courseinsights:manage', $context);
+
+// Enrich at-risk students with risk scores (bulk fetch — one batch DB read).
+if (!empty($atrisk)) {
+    $usercourses = [];
+    foreach ($atrisk as $s) {
+        $usercourses[] = ['userid' => (int) $s['userid'], 'courseid' => (int) $s['courseid']];
+    }
+    $scoredata = \local_courseinsights\risk_service::get_scores_for_usercourses($usercourses);
+    foreach ($atrisk as &$student) {
+        $key = $student['userid'] . '_' . $student['courseid'];
+        $sd  = $scoredata[$key] ?? ['score' => 0, 'risklevel' => 'low', 'reasons' => []];
+        $student['riskscore']      = $sd['score'];
+        $student['risklevellabel'] = get_string('risk_level_' . $sd['risklevel'], 'local_courseinsights');
+        $student['riskbadgeclass'] = 'ci-risk-badge ci-risk-badge--' . $sd['risklevel'];
+        $reasonstrings = [];
+        foreach ($sd['reasons'] as $r) {
+            if (!empty($r['key'])) {
+                $reasonstrings[] = get_string($r['key'], 'local_courseinsights', $r['a'] ?? null);
+            }
+        }
+        $student['riskreasons'] = implode('; ', $reasonstrings);
+        if ($cancreateintervention) {
+            $student['createintervention_url'] = (new moodle_url(
+                '/local/courseinsights/interventions.php',
+                [
+                    'action'    => 'create',
+                    'userid'    => $student['userid'],
+                    'courseid'  => $student['courseid'],
+                    'riskscore' => $sd['score'],
+                    'risklevel' => $sd['risklevel'],
+                    'sesskey'   => sesskey(),
+                ]
+            ))->out(false);
+        } else {
+            $student['createintervention_url'] = '';
+        }
+    }
+    unset($student);
+}
+
 $brandaccent  = (string) get_config('local_courseinsights', 'brandaccentcolor');
 $brandlogourl = (string) get_config('local_courseinsights', 'brandlogourl');
 $brandname    = (string) get_config('local_courseinsights', 'brandname');
@@ -108,6 +150,10 @@ $templatecontext = array_merge($kpis, [
     'atrisk_col_course'             => get_string('atrisk_col_course', 'local_courseinsights'),
     'atrisk_col_lastaccess'         => get_string('atrisk_col_lastaccess', 'local_courseinsights'),
     'atrisk_col_days'               => get_string('atrisk_col_days', 'local_courseinsights'),
+    'atrisk_col_riskscore'          => get_string('atrisk_col_riskscore', 'local_courseinsights'),
+    'atrisk_col_action'             => get_string('atrisk_col_action', 'local_courseinsights'),
+    'atrisk_intervention_label'     => get_string('intervention_create', 'local_courseinsights'),
+    'has_createintervention'        => $cancreateintervention,
     'atrisk_nodata'                 => get_string('atrisk_nodata', 'local_courseinsights'),
     // Branding.
     'hasbrandlogo'                  => $brandlogourl !== '',
@@ -138,6 +184,18 @@ echo html_writer::tag('a', get_string('tab_userreport', 'local_courseinsights'),
     'href'  => (new moodle_url('/local/courseinsights/user_report.php'))->out(false),
     'class' => 'ci-tab',
 ]);
+if ($cancreateintervention) {
+    echo html_writer::tag('a', get_string('tab_interventions', 'local_courseinsights'), [
+        'href'  => (new moodle_url('/local/courseinsights/interventions.php'))->out(false),
+        'class' => 'ci-tab',
+    ]);
+}
+if ($canmanage) {
+    echo html_writer::tag('a', get_string('tab_riskrules', 'local_courseinsights'), [
+        'href'  => (new moodle_url('/local/courseinsights/risk_rules.php'))->out(false),
+        'class' => 'ci-tab',
+    ]);
+}
 echo html_writer::end_div();
 
 if ($snapshotmissing) {

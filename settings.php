@@ -311,5 +311,43 @@ if ($hassiteconfig) {
         ''
     ));
 
+    $settings->add(new admin_setting_heading(
+        'local_courseinsights/msgtemplatesheading',
+        get_string('msgtemplatesheading', 'local_courseinsights'),
+        get_string('msgtemplatesheading_desc', 'local_courseinsights')
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_courseinsights/tmpl1_subject',
+        get_string('tmpl1_subject', 'local_courseinsights'),
+        get_string('tmpl1_subject_desc', 'local_courseinsights'),
+        get_string('tmpl1_subject_default', 'local_courseinsights'),
+        PARAM_TEXT
+    ));
+
+    $settings->add(new admin_setting_configtextarea(
+        'local_courseinsights/tmpl1_body',
+        get_string('tmpl1_body', 'local_courseinsights'),
+        get_string('tmpl1_body_desc', 'local_courseinsights'),
+        get_string('tmpl1_body_default', 'local_courseinsights'),
+        PARAM_TEXT
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_courseinsights/tmpl2_subject',
+        get_string('tmpl2_subject', 'local_courseinsights'),
+        get_string('tmpl2_subject_desc', 'local_courseinsights'),
+        get_string('tmpl2_subject_default', 'local_courseinsights'),
+        PARAM_TEXT
+    ));
+
+    $settings->add(new admin_setting_configtextarea(
+        'local_courseinsights/tmpl2_body',
+        get_string('tmpl2_body', 'local_courseinsights'),
+        get_string('tmpl2_body_desc', 'local_courseinsights'),
+        get_string('tmpl2_body_default', 'local_courseinsights'),
+        PARAM_TEXT
+    ));
+
     $ADMIN->add('localplugins', $settings);
 }

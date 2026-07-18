@@ -1930,3 +1930,248 @@
 .ci-page-layout--nosidebar .ci-page-main {
     padding-left: 0;
 }
+
+/* Risk score badges */
+.ci-risk-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: default;
+}
+.ci-risk-badge--low      { background: #d4edda; color: #155724; }
+.ci-risk-badge--medium   { background: #fff3cd; color: #856404; }
+.ci-risk-badge--high     { background: #ffe5cc; color: #7a3e00; }
+.ci-risk-badge--critical { background: #f8d7da; color: #721c24; }
+
+/* Risk rules admin page */
+.ci-risk-rules-table .ci-risk-input {
+    width: 70px;
+    text-align: center;
+    padding: 2px 4px;
+}
+.ci-risk-levelguide { margin-top: 1.5rem; }
+.ci-risk-levellist  { list-style: none; padding: 0; display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.ci-risk-levellist li { display: flex; align-items: center; gap: 6px; font-size: 0.9em; }
+
+@media (prefers-color-scheme: dark) {
+    .ci-risk-badge--low      { background: #1a3325; color: #75d498; }
+    .ci-risk-badge--medium   { background: #332b00; color: #ffd54f; }
+    .ci-risk-badge--high     { background: #3b2000; color: #ffb74d; }
+    .ci-risk-badge--critical { background: #3b0f14; color: #ef9a9a; }
+}
+
+/* Intervention create button (at-risk table) */
+.ci-intervene-btn {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.78em;
+    font-weight: 600;
+    background: var(--ci-primary, #0066cc);
+    color: #fff;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.ci-intervene-btn:hover { opacity: 0.85; color: #fff; text-decoration: none; }
+
+/* Intervention status badges */
+.ci-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 600;
+}
+.ci-status-badge--new        { background: #cce5ff; color: #004085; }
+.ci-status-badge--inprogress { background: #fff3cd; color: #856404; }
+.ci-status-badge--contacted  { background: #d4edda; color: #155724; }
+.ci-status-badge--monitoring { background: #e2d9f3; color: #432874; }
+.ci-status-badge--resolved   { background: #d4edda; color: #0a3622; }
+.ci-status-badge--closed     { background: #e9ecef; color: #495057; }
+
+@media (prefers-color-scheme: dark) {
+    .ci-status-badge--new        { background: #003366; color: #99ccff; }
+    .ci-status-badge--inprogress { background: #332b00; color: #ffd54f; }
+    .ci-status-badge--contacted  { background: #1a3325; color: #75d498; }
+    .ci-status-badge--monitoring { background: #2a1f42; color: #c5a8f5; }
+    .ci-status-badge--resolved   { background: #0d2e1c; color: #6fcf97; }
+    .ci-status-badge--closed     { background: #2d2d2d; color: #adb5bd; }
+}
+
+/* Intervention list page */
+.ci-interventions-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+.ci-interventions-header .ci-chart-title { margin-bottom: 0; }
+.ci-interventions-filter { display: flex; align-items: center; gap: 0.5rem; }
+.ci-filter-select {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--ci-border, #dee2e6);
+    background: var(--ci-card-bg, #fff);
+    color: var(--ci-text, #212529);
+    font-size: 0.875rem;
+}
+
+/* My Cases sub-tabs */
+.ci-cases-subtabs { display: flex; gap: 0.25rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.ci-cases-subtab {
+    padding: 0.3rem 0.85rem;
+    border-radius: 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--ci-muted, #6c757d);
+    border: 1px solid var(--ci-border, #dee2e6);
+    background: transparent;
+    transition: background 0.15s, color 0.15s;
+}
+.ci-cases-subtab:hover { background: var(--ci-bg, #f8f9fa); color: var(--ci-primary, #0066cc); text-decoration: none; }
+.ci-cases-subtab--active { background: var(--ci-primary, #0066cc); color: #fff; border-color: var(--ci-primary, #0066cc); }
+.ci-cases-subtab--active:hover { color: #fff; }
+.ci-cases-subtab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2em;
+    padding: 0 0.3em;
+    background: rgba(255,255,255,0.3);
+    border-radius: 0.7em;
+    font-size: 0.8em;
+    font-weight: 700;
+    margin-left: 0.25em;
+    vertical-align: middle;
+}
+.ci-cases-subtab:not(.ci-cases-subtab--active) .ci-cases-subtab-count {
+    background: var(--ci-primary, #0066cc);
+    color: #fff;
+}
+
+/* Engagement comparison table */
+.ci-engagement-table { margin-top: 0.5rem; }
+.ci-muted-text { font-size: 0.875rem; color: var(--ci-muted, #6c757d); margin-bottom: 0.75rem; }
+
+/* Trend badges (engagement comparison) */
+.ci-trend-badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 0.35rem; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.ci-trend-badge--up   { background: #d4edda; color: #155724; }
+.ci-trend-badge--down { background: #f8d7da; color: #842029; }
+.ci-trend-badge--flat { background: #e9ecef; color: #495057; }
+
+@media (prefers-color-scheme: dark) {
+    .ci-trend-badge--up   { background: #0d2e1c; color: #6fcf97; }
+    .ci-trend-badge--down { background: #3d1015; color: #f5a0a8; }
+    .ci-trend-badge--flat { background: #2d2d2d; color: #adb5bd; }
+}
+:root[data-theme="dark"] .ci-trend-badge--up   { background: #0d2e1c; color: #6fcf97; }
+:root[data-theme="dark"] .ci-trend-badge--down { background: #3d1015; color: #f5a0a8; }
+:root[data-theme="dark"] .ci-trend-badge--flat { background: #2d2d2d; color: #adb5bd; }
+:root[data-theme="light"] .ci-trend-badge--up   { background: #d4edda; color: #155724; }
+:root[data-theme="light"] .ci-trend-badge--down { background: #f8d7da; color: #842029; }
+:root[data-theme="light"] .ci-trend-badge--flat { background: #e9ecef; color: #495057; }
+
+/* Urgency badges (My Cases view) */
+.ci-urgency-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 0.35rem; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.ci-urgency-badge--overdue { background: #f8d7da; color: #842029; }
+.ci-urgency-badge--duesoon { background: #fff3cd; color: #664d03; }
+
+@media (prefers-color-scheme: dark) {
+    .ci-urgency-badge--overdue { background: #3d1015; color: #f5a0a8; }
+    .ci-urgency-badge--duesoon { background: #332600; color: #ffd54f; }
+}
+:root[data-theme="dark"] .ci-urgency-badge--overdue { background: #3d1015; color: #f5a0a8; }
+:root[data-theme="dark"] .ci-urgency-badge--duesoon { background: #332600; color: #ffd54f; }
+:root[data-theme="light"] .ci-urgency-badge--overdue { background: #f8d7da; color: #842029; }
+:root[data-theme="light"] .ci-urgency-badge--duesoon { background: #fff3cd; color: #664d03; }
+
+/* Intervention detail page */
+.ci-intervention-meta { margin-bottom: 1rem; }
+.ci-intervention-meta p { margin-bottom: 0.4rem; }
+.ci-intervention-form .ci-form-row,
+.ci-add-note-form .ci-form-row,
+.ci-send-msg-form .ci-form-row { margin-bottom: 0.75rem; }
+.ci-form-label { font-weight: 600; font-size: 0.875rem; display: inline-block; margin-bottom: 0.25rem; min-width: 130px; }
+.ci-date-input {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--ci-border, #dee2e6);
+    background: var(--ci-card-bg, #fff);
+    color: var(--ci-text, #212529);
+    font-size: 0.875rem;
+}
+.ci-textarea { font-size: 0.875rem; resize: vertical; }
+.ci-form-check { display: flex; align-items: center; gap: 0.4rem; }
+.ci-private-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.72em;
+    font-weight: 600;
+    background: #f8d7da;
+    color: #721c24;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* Notes timeline */
+.ci-notes-timeline { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
+.ci-note {
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--ci-primary, #0066cc);
+    background: var(--ci-card-alt-bg, #f8f9fa);
+    border-radius: 0 6px 6px 0;
+}
+.ci-note--private {
+    border-left-color: #721c24;
+    background: #fff5f5;
+}
+.ci-note-meta { font-size: 0.8em; color: var(--ci-text-muted, #6c757d); margin-bottom: 0.35rem; }
+.ci-note-body { font-size: 0.9em; white-space: pre-wrap; word-break: break-word; }
+
+@media (prefers-color-scheme: dark) {
+    .ci-filter-select,
+    .ci-date-input { background: #2d2d2d; border-color: #444; color: #e0e0e0; }
+    .ci-note { background: #1e1e1e; }
+    .ci-note--private { background: #2b1a1a; border-left-color: #ef9a9a; }
+    .ci-private-badge { background: #3b0f14; color: #ef9a9a; }
+}
+
+/* Intervention reports page */
+.ci-reports-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+.ci-reports-stat-card {
+    flex: 1;
+    min-width: 110px;
+    background: var(--ci-card-alt-bg, #f8f9fa);
+    border: 1px solid var(--ci-border, #dee2e6);
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem;
+    text-align: center;
+}
+.ci-reports-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--ci-primary, #0073aa);
+    line-height: 1.15;
+}
+.ci-reports-stat-label {
+    font-size: 0.75rem;
+    color: var(--ci-text-muted, #6c757d);
+    margin-top: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.ci-section-heading {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.6rem;
+}
+.ci-reports-table { margin-bottom: 1.5rem; }
+
+@media (prefers-color-scheme: dark) {
+    .ci-reports-stat-card { background: #1e1e1e; border-color: #3a3a3a; }
+}

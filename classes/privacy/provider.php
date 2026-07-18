@@ -76,6 +76,44 @@ class provider implements
             'privacy:metadata:summary'
         );
 
+        $collection->add_database_table(
+            'local_courseinsights_risk_scores',
+            [
+                'userid'         => 'privacy:metadata:risk_scores:userid',
+                'courseid'       => 'privacy:metadata:risk_scores:courseid',
+                'score'          => 'privacy:metadata:risk_scores:score',
+                'risklevel'      => 'privacy:metadata:risk_scores:risklevel',
+                'reasons'        => 'privacy:metadata:risk_scores:reasons',
+                'timecalculated' => 'privacy:metadata:risk_scores:timecalculated',
+            ],
+            'privacy:metadata:risk_scores'
+        );
+
+        $collection->add_database_table(
+            'local_courseinsights_interventions',
+            [
+                'userid'      => 'privacy:metadata:interventions:userid',
+                'courseid'    => 'privacy:metadata:interventions:courseid',
+                'createdby'   => 'privacy:metadata:interventions:createdby',
+                'title'       => 'privacy:metadata:interventions:title',
+                'status'      => 'privacy:metadata:interventions:status',
+                'riskscore'   => 'privacy:metadata:interventions:riskscore',
+                'timecreated' => 'privacy:metadata:interventions:timecreated',
+            ],
+            'privacy:metadata:interventions'
+        );
+
+        $collection->add_database_table(
+            'local_courseinsights_intervention_notes',
+            [
+                'userid'      => 'privacy:metadata:intervention_notes:userid',
+                'note'        => 'privacy:metadata:intervention_notes:note',
+                'isprivate'   => 'privacy:metadata:intervention_notes:isprivate',
+                'timecreated' => 'privacy:metadata:intervention_notes:timecreated',
+            ],
+            'privacy:metadata:intervention_notes'
+        );
+
         return $collection;
     }
 
@@ -107,6 +145,29 @@ class provider implements
             [
                 'contextlevel' => CONTEXT_COURSE,
                 'userid' => $userid,
+            ]
+        );
+        $contextlist->add_from_sql(
+            "SELECT ctx.id
+               FROM {context} ctx
+               JOIN {local_courseinsights_risk_scores} rs ON rs.courseid = ctx.instanceid
+              WHERE ctx.contextlevel = :contextlevel
+                AND rs.userid = :userid",
+            [
+                'contextlevel' => CONTEXT_COURSE,
+                'userid' => $userid,
+            ]
+        );
+        $contextlist->add_from_sql(
+            "SELECT ctx.id
+               FROM {context} ctx
+               JOIN {local_courseinsights_interventions} ci ON ci.courseid = ctx.instanceid
+              WHERE ctx.contextlevel = :contextlevel
+                AND (ci.userid = :userid OR ci.createdby = :createdby)",
+            [
+                'contextlevel' => CONTEXT_COURSE,
+                'userid'       => $userid,
+                'createdby'    => $userid,
             ]
         );
         $contextlist->add_from_sql(
@@ -208,6 +269,73 @@ class provider implements
                     (object) ['teachers' => $summary->teachers]
                 );
             }
+
+            $riskscores = $DB->get_records(
+                'local_courseinsights_risk_scores',
+                [
+                    'userid'   => $userid,
+                    'courseid' => $context->instanceid,
+                ]
+            );
+            if (!empty($riskscores)) {
+                $riskdata = [];
+                foreach ($riskscores as $record) {
+                    $riskdata[] = (object) [
+                        'courseid'                => (int) $record->courseid,
+                        'score'                   => (int) $record->score,
+                        'risklevel'               => $record->risklevel,
+                        'reasons'                 => $record->reasons,
+                        'timecalculated'          => (int) $record->timecalculated,
+                        'timecalculatedformatted' => userdate((int) $record->timecalculated),
+                    ];
+                }
+                writer::with_context($context)->export_data(
+                    [get_string('privacy:risk_scores', 'local_courseinsights')],
+                    (object) ['riskscores' => $riskdata]
+                );
+            }
+
+            // Export interventions where this user is the student.
+            $interventions = $DB->get_records(
+                'local_courseinsights_interventions',
+                ['userid' => $userid, 'courseid' => $context->instanceid]
+            );
+            if (!empty($interventions)) {
+                $intdata = [];
+                foreach ($interventions as $record) {
+                    $intdata[] = (object) [
+                        'title'        => $record->title,
+                        'status'       => $record->status,
+                        'riskscore'    => $record->riskscore,
+                        'timecreated'  => userdate((int) $record->timecreated),
+                    ];
+                }
+                writer::with_context($context)->export_data(
+                    [get_string('privacy:interventions', 'local_courseinsights')],
+                    (object) ['interventions' => $intdata]
+                );
+            }
+
+            // Export notes authored by this user on any intervention in this course.
+            $notessql = "SELECT n.id, n.note, n.isprivate, n.timecreated
+                           FROM {local_courseinsights_intervention_notes} n
+                           JOIN {local_courseinsights_interventions} ci ON ci.id = n.interventionid
+                          WHERE n.userid = :userid AND ci.courseid = :courseid";
+            $authornotes = $DB->get_records_sql($notessql, ['userid' => $userid, 'courseid' => $context->instanceid]);
+            if (!empty($authornotes)) {
+                $notedata = [];
+                foreach ($authornotes as $record) {
+                    $notedata[] = (object) [
+                        'note'        => $record->note,
+                        'isprivate'   => (bool) $record->isprivate,
+                        'timecreated' => userdate((int) $record->timecreated),
+                    ];
+                }
+                writer::with_context($context)->export_data(
+                    [get_string('privacy:intervention_notes', 'local_courseinsights')],
+                    (object) ['notes' => $notedata]
+                );
+            }
         }
     }
 
@@ -227,6 +355,20 @@ class provider implements
         $DB->delete_records('local_courseinsights_reminders', ['courseid' => $context->instanceid]);
         $DB->delete_records('local_courseinsights_atrisk', ['courseid' => $context->instanceid]);
         $DB->delete_records('local_courseinsights_summary', ['courseid' => $context->instanceid]);
+        $DB->delete_records('local_courseinsights_risk_scores', ['courseid' => $context->instanceid]);
+
+        // Delete intervention notes then interventions for this course.
+        $intids = $DB->get_fieldset_select(
+            'local_courseinsights_interventions',
+            'id',
+            'courseid = :courseid',
+            ['courseid' => $context->instanceid]
+        );
+        if (!empty($intids)) {
+            [$insql, $inparams] = $DB->get_in_or_equal($intids, SQL_PARAMS_NAMED);
+            $DB->delete_records_select('local_courseinsights_intervention_notes', "interventionid {$insql}", $inparams);
+        }
+        $DB->delete_records('local_courseinsights_interventions', ['courseid' => $context->instanceid]);
     }
 
     /**
@@ -255,6 +397,41 @@ class provider implements
                         'courseid' => $context->instanceid,
                     ]
                 );
+                $DB->delete_records(
+                    'local_courseinsights_risk_scores',
+                    [
+                        'userid'   => $userid,
+                        'courseid' => $context->instanceid,
+                    ]
+                );
+                // Delete interventions where this user is the student, plus associated notes.
+                $intids = $DB->get_fieldset_select(
+                    'local_courseinsights_interventions',
+                    'id',
+                    'userid = :userid AND courseid = :courseid',
+                    ['userid' => $userid, 'courseid' => $context->instanceid]
+                );
+                if (!empty($intids)) {
+                    [$insql, $inparams] = $DB->get_in_or_equal($intids, SQL_PARAMS_NAMED);
+                    $DB->delete_records_select('local_courseinsights_intervention_notes', "interventionid {$insql}", $inparams);
+                    $DB->delete_records_select('local_courseinsights_interventions', "id {$insql}", $inparams);
+                }
+                // Delete notes authored by this user in this course's interventions.
+                $allintids = $DB->get_fieldset_select(
+                    'local_courseinsights_interventions',
+                    'id',
+                    'courseid = :courseid',
+                    ['courseid' => $context->instanceid]
+                );
+                if (!empty($allintids)) {
+                    [$allinsql, $allinparams] = $DB->get_in_or_equal($allintids, SQL_PARAMS_NAMED, 'aid');
+                    $allinparams['authorid'] = $userid;
+                    $DB->delete_records_select(
+                        'local_courseinsights_intervention_notes',
+                        "userid = :authorid AND interventionid {$allinsql}",
+                        $allinparams
+                    );
+                }
                 $isteacher = $DB->record_exists_sql(
                     "SELECT 1 FROM {role_assignments} ra
                        JOIN {role} r ON r.id = ra.roleid
@@ -292,6 +469,27 @@ class provider implements
             'userid',
             "SELECT userid
                FROM {local_courseinsights_atrisk}
+              WHERE courseid = :courseid",
+            ['courseid' => $context->instanceid]
+        );
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT userid
+               FROM {local_courseinsights_risk_scores}
+              WHERE courseid = :courseid",
+            ['courseid' => $context->instanceid]
+        );
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT userid
+               FROM {local_courseinsights_interventions}
+              WHERE courseid = :courseid",
+            ['courseid' => $context->instanceid]
+        );
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT createdby AS userid
+               FROM {local_courseinsights_interventions}
               WHERE courseid = :courseid",
             ['courseid' => $context->instanceid]
         );
@@ -339,6 +537,39 @@ class provider implements
             "courseid = :courseid AND userid {$insql}",
             $params
         );
+        $DB->delete_records_select(
+            'local_courseinsights_risk_scores',
+            "courseid = :courseid AND userid {$insql}",
+            $params
+        );
+        // Delete interventions (as student) and associated notes.
+        $intids = $DB->get_fieldset_select(
+            'local_courseinsights_interventions',
+            'id',
+            "courseid = :courseid AND userid {$insql}",
+            $params
+        );
+        if (!empty($intids)) {
+            [$intidsql, $intidparams] = $DB->get_in_or_equal($intids, SQL_PARAMS_NAMED, 'intid');
+            $DB->delete_records_select('local_courseinsights_intervention_notes', "interventionid {$intidsql}", $intidparams);
+            $DB->delete_records_select('local_courseinsights_interventions', "id {$intidsql}", $intidparams);
+        }
+        // Delete notes authored by these users in this course.
+        $allintids = $DB->get_fieldset_select(
+            'local_courseinsights_interventions',
+            'id',
+            'courseid = :courseid',
+            ['courseid' => $context->instanceid]
+        );
+        if (!empty($allintids)) {
+            [$aidsql, $aidparams] = $DB->get_in_or_equal($allintids, SQL_PARAMS_NAMED, 'caid');
+            [$uidsql, $uidparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'cuid');
+            $DB->delete_records_select(
+                'local_courseinsights_intervention_notes',
+                "interventionid {$aidsql} AND userid {$uidsql}",
+                array_merge($aidparams, $uidparams)
+            );
+        }
 
         [$teacherinsql, $teacherparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'tuid');
         $teacherparams['tctxid'] = $context->id;
