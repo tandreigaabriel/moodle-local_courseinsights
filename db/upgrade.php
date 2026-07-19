@@ -347,5 +347,20 @@ function xmldb_local_courseinsights_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026071911, 'local', 'courseinsights');
     }
 
+    if ($oldversion < 2026071912) {
+        // Add a standalone timecreated index on logstore_standard_log so the
+        // site-wide monthly active users query (WHERE timecreated > cutoff) can
+        // use a range scan instead of a full table scan.
+        // The existing (courseid, timecreated) index cannot be used when courseid
+        // has an inequality filter (courseid != SITEID).
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('logstore_standard_log');
+        $index = new xmldb_index('logsstanlog_tim_ix', XMLDB_INDEX_NOTUNIQUE, ['timecreated']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+        upgrade_plugin_savepoint(true, 2026071912, 'local', 'courseinsights');
+    }
+
     return true;
 }

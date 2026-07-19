@@ -38,6 +38,10 @@ function xmldb_local_courseinsights_install(): void {
     if (!$dbman->index_exists($table, $index)) {
         $dbman->add_index($table, $index);
     }
+    $index = new xmldb_index('logsstanlog_tim_ix', XMLDB_INDEX_NOTUNIQUE, ['timecreated']);
+    if (!$dbman->index_exists($table, $index)) {
+        $dbman->add_index($table, $index);
+    }
 
     if ($DB->record_exists('local_courseinsights_risk_rules', [])) {
         return;

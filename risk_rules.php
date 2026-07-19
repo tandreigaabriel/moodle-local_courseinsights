@@ -68,6 +68,24 @@ if ($action === 'save') {
 
 $rules = $DB->get_records('local_courseinsights_risk_rules', null, 'sortorder ASC');
 
+if (empty($rules)) {
+    $now = time();
+    foreach (\local_courseinsights\risk_service::get_default_rules() as $row) {
+        [$ruletype, $label, $threshold, $weight, $enabled, $sortorder] = $row;
+        $DB->insert_record('local_courseinsights_risk_rules', (object) [
+            'ruletype'     => $ruletype,
+            'label'        => $label,
+            'threshold'    => $threshold,
+            'weight'       => $weight,
+            'enabled'      => $enabled,
+            'sortorder'    => $sortorder,
+            'timecreated'  => $now,
+            'timemodified' => $now,
+        ]);
+    }
+    $rules = $DB->get_records('local_courseinsights_risk_rules', null, 'sortorder ASC');
+}
+
 $brandaccent = (string) get_config('local_courseinsights', 'brandaccentcolor');
 $validaccent = $brandaccent && preg_match('/^#[0-9a-fA-F]{3,6}$/', $brandaccent);
 
