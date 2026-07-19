@@ -323,5 +323,29 @@ function xmldb_local_courseinsights_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026071906, 'local', 'courseinsights');
     }
 
+    if ($oldversion < 2026071911) {
+        // Re-seed default risk rules if the table exists but is empty.
+        // install.php seeds on a true fresh install; this step covers the case
+        // where the plugin was "reinstalled" by overwriting files (Moodle runs
+        // upgrade steps, not install.php, when a version record already exists).
+        if (!$DB->record_exists('local_courseinsights_risk_rules', [])) {
+            $now = time();
+            foreach (\local_courseinsights\risk_service::get_default_rules() as $row) {
+                [$ruletype, $label, $threshold, $weight, $enabled, $sortorder] = $row;
+                $DB->insert_record('local_courseinsights_risk_rules', (object) [
+                    'ruletype'     => $ruletype,
+                    'label'        => $label,
+                    'threshold'    => $threshold,
+                    'weight'       => $weight,
+                    'enabled'      => $enabled,
+                    'sortorder'    => $sortorder,
+                    'timecreated'  => $now,
+                    'timemodified' => $now,
+                ]);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026071911, 'local', 'courseinsights');
+    }
+
     return true;
 }

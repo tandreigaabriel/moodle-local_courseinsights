@@ -2576,37 +2576,29 @@ class report_service {
         $months = max(1, min(24, $months));
         $cutoff = strtotime("-{$months} months");
 
-        $rs = $DB->get_recordset_sql(
-            "SELECT FLOOR(timecreated / 86400) AS daybucket, userid, COUNT(*) AS events
+        // GROUP BY calendar month in SQL so the DB returns at most N rows (one per month)
+        // instead of streaming one row per (user, day) pair — which can be 100k+ rows on
+        // large sites and was the bottleneck in [2/4] of the nightly build task.
+        $rows = $DB->get_records_sql(
+            "SELECT DATE_FORMAT(FROM_UNIXTIME(timecreated), '%Y-%m') AS yearmonth,
+                    COUNT(DISTINCT userid) AS activeusers,
+                    COUNT(*) AS events
                FROM {logstore_standard_log}
-              WHERE courseid <> :site
+              WHERE courseid != :site
                 AND userid > 0
                 AND timecreated > :cutoff
-              GROUP BY daybucket, userid",
+              GROUP BY yearmonth
+              ORDER BY yearmonth ASC",
             ['site' => SITEID, 'cutoff' => $cutoff]
         );
 
-        $buckets = [];
-        foreach ($rs as $r) {
-            $yearmonth = date('Y-m', (int) $r->daybucket * 86400);
-            if (!isset($buckets[$yearmonth])) {
-                $buckets[$yearmonth] = [
-                    'users'  => [],
-                    'events' => 0,
-                ];
-            }
-            $buckets[$yearmonth]['users'][(int) $r->userid] = true;
-            $buckets[$yearmonth]['events'] += (int) $r->events;
-        }
-        $rs->close();
-
         $result = [];
-        foreach ($buckets as $yearmonth => $bucket) {
-            [$year, $month] = explode('-', $yearmonth);
+        foreach ($rows as $row) {
+            [$year, $month] = explode('-', $row->yearmonth);
             $result[] = [
                 'label'        => date('M Y', mktime(0, 0, 0, (int) $month, 1, (int) $year)),
-                'active_users' => count($bucket['users']),
-                'events'       => $bucket['events'],
+                'active_users' => (int) $row->activeusers,
+                'events'       => (int) $row->events,
             ];
         }
         return $result;
