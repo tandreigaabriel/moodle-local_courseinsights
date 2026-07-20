@@ -362,5 +362,13 @@ function xmldb_local_courseinsights_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026071912, 'local', 'courseinsights');
     }
 
+    if ($oldversion < 2026072002) {
+        // Remove capability restriction from intervention_contact message provider
+        // so students (who lack createintervention capability) can receive messages.
+        // Moodle re-reads db/messages.php automatically on upgrade, this savepoint
+        // ensures the provider table is refreshed for existing installations.
+        upgrade_plugin_savepoint(true, 2026072002, 'local', 'courseinsights');
+    }
+
     return true;
 }

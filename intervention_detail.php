@@ -114,8 +114,14 @@ if ($action === 'sendmessage') {
     $msg->fullmessageformat = FORMAT_PLAIN;
     $msg->fullmessagehtml   = '<p>' . nl2br(s($msgbody)) . '</p>';
     $msg->smallmessage      = shorten_text($msgbody, 100);
-    $msg->notification      = 0;
-    message_send($msg);
+    $msg->notification      = 1;
+    $msg->courseid          = $intervention->courseid;
+    $msgid = message_send($msg);
+
+    if (!$msgid) {
+        redirect($url, get_string('intervention_msg_failed', 'local_courseinsights'), null,
+            \core\output\notification::NOTIFY_ERROR);
+    }
 
     \local_courseinsights\intervention_service::add_note(
         $id,

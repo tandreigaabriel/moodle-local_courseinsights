@@ -35,7 +35,5 @@ $messageproviders = [
     'followup_reminder' => [
         'capability' => 'local/courseinsights:createintervention',
     ],
-    'intervention_contact' => [
-        'capability' => 'local/courseinsights:createintervention',
-    ],
+    'intervention_contact' => [],
 ];
