@@ -296,6 +296,9 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 
 ## Changelog
 
+### 1.0.0
+- Version milestone: first stable 1.0 release after 65 iterations of development, testing, and refinement
+
 ### 0.65.0
 - Fixed: intervention messages now delivered correctly to students — the `intervention_contact` message provider had a staff-only capability restriction that silently blocked student receipt; removed so any authenticated user can receive messages from staff
 - Fixed: error notice now shown when message delivery fails, with guidance to check site messaging settings

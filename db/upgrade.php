@@ -370,5 +370,10 @@ function xmldb_local_courseinsights_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026072002, 'local', 'courseinsights');
     }
 
+    if ($oldversion < 2026072003) {
+        // Version bump to 1.0.0 — no DB changes required.
+        upgrade_plugin_savepoint(true, 2026072003, 'local', 'courseinsights');
+    }
+
     return true;
 }
