@@ -119,8 +119,12 @@ if ($action === 'sendmessage') {
     $msgid = message_send($msg);
 
     if (!$msgid) {
-        redirect($url, get_string('intervention_msg_failed', 'local_courseinsights'), null,
-            \core\output\notification::NOTIFY_ERROR);
+        redirect(
+            $url,
+            get_string('intervention_msg_failed', 'local_courseinsights'),
+            null,
+            \core\output\notification::NOTIFY_ERROR
+        );
     }
 
     \local_courseinsights\intervention_service::add_note(
