@@ -199,6 +199,14 @@ if ($canmanage) {
         'href'  => (new moodle_url('/local/courseinsights/admin_tasks.php'))->out(false),
         'class' => 'ci-tab',
     ]);
+    echo html_writer::tag('a', get_string('tab_msgtemplates', 'local_courseinsights'), [
+        'href'  => (new moodle_url('/local/courseinsights/message_templates.php'))->out(false),
+        'class' => 'ci-tab',
+    ]);
+    echo html_writer::tag('a', get_string('tab_setupguide', 'local_courseinsights'), [
+        'href'  => (new moodle_url('/local/courseinsights/help.php'))->out(false),
+        'class' => 'ci-tab',
+    ]);
 }
 echo html_writer::end_div();
 

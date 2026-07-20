@@ -138,6 +138,12 @@ $student    = $DB->get_record('user', ['id' => $intervention->userid], 'id,first
 $course     = $DB->get_record('course', ['id' => $intervention->courseid], 'id,fullname', IGNORE_MISSING);
 $notes      = \local_courseinsights\intervention_service::get_notes($id, $canviewprivate);
 $staffusers = get_users_by_capability($context, 'local/courseinsights:createintervention');
+// Get_users_by_capability never returns site admins (admin bypass is invisible to it).
+foreach (get_admins() as $admin) {
+    if (!isset($staffusers[$admin->id])) {
+        $staffusers[$admin->id] = $admin;
+    }
+}
 
 $studentname = $student ? trim($student->firstname . ' ' . $student->lastname) : '?';
 $coursename  = $course ? format_string($course->fullname) : '?';
@@ -186,6 +192,14 @@ if ($canmanage) {
 if (has_capability('local/courseinsights:manage', $context)) {
     echo html_writer::tag('a', get_string('tab_taskstatus', 'local_courseinsights'), [
         'href'  => (new moodle_url('/local/courseinsights/admin_tasks.php'))->out(false),
+        'class' => 'ci-tab',
+    ]);
+    echo html_writer::tag('a', get_string('tab_msgtemplates', 'local_courseinsights'), [
+        'href'  => (new moodle_url('/local/courseinsights/message_templates.php'))->out(false),
+        'class' => 'ci-tab',
+    ]);
+    echo html_writer::tag('a', get_string('tab_setupguide', 'local_courseinsights'), [
+        'href'  => (new moodle_url('/local/courseinsights/help.php'))->out(false),
         'class' => 'ci-tab',
     ]);
 }

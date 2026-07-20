@@ -90,6 +90,8 @@ Click "Detailed Report" on any course card to open a full breakdown:
 - **Adviser caseload ("My Cases")** — staff see a personal view of only their assigned or created cases; cases are sorted by urgency (overdue follow-ups first, then due within 7 days, then active, then no date set); overdue and due-soon badges are shown inline
 - **Student Engagement Since Intervention** — every case detail page shows a before/after comparison of course visits, forum posts, assignment submissions, and quiz attempts for the 30 days before the case was opened vs. since it was opened; trend badges (↑ Improving / ↓ Declining / → Stable) use per-day rates so short windows compare fairly; visible after the case is 3 days old
 - **Send Message to Student** — send a Moodle message directly to the student from inside any intervention case; choose from two configurable templates (Initial Contact and Follow-up) with `{firstname}`, `{lastname}`, `{course}`, and `{adviser}` placeholders; the send is automatically logged as a note on the case timeline
+- **Message Templates page** — admins can customise the Initial Contact and Follow-up template subject and body from a dedicated tab bar page; changes apply immediately site-wide
+- **Setup Guide** — a built-in 5-step onboarding guide for administrators covering scheduled task setup, plugin settings, risk rules, message templates, and starting interventions; accessible from the tab bar
 
 ---
 
@@ -293,6 +295,14 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 ---
 
 ## Changelog
+
+### 0.64.0
+- Message Templates management page: admins can edit the subject and body of the Initial Contact and Follow-up templates from a dedicated tab bar page (`message_templates.php`) instead of navigating to plugin settings; changes apply to all staff immediately
+- Setup Guide page: a 5-step admin onboarding guide (`help.php`) is now accessible from the tab bar; covers running the cache task, reviewing settings, configuring risk rules, customising message templates, and starting interventions
+- Both pages are accessible from the tab bar on every plugin page (requires `manage` capability)
+
+### 0.63.0
+- Site admins are now included in the "Assign To" dropdown on intervention case detail pages; previously only users with `createintervention` capability appeared due to `get_users_by_capability()` silently excluding admin bypass users
 
 ### 0.60.4
 - Schema fix: removed invalid empty-string DEFAULT from CHAR NOT NULL columns (`ruletype`, `label`, `title`) that triggered XMLDB debug warnings during upgrade and uninstall
