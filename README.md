@@ -296,6 +296,11 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 
 ## Changelog
 
+### 0.65.0
+- Fixed: intervention messages now delivered correctly to students — the `intervention_contact` message provider had a staff-only capability restriction that silently blocked student receipt; removed so any authenticated user can receive messages from staff
+- Fixed: error notice now shown when message delivery fails, with guidance to check site messaging settings
+- Improved: staff-to-student messages now use system notifications so delivery is not affected by site messaging policies or user block lists
+
 ### 0.64.0
 - Message Templates management page: admins can edit the subject and body of the Initial Contact and Follow-up templates from a dedicated tab bar page (`message_templates.php`) instead of navigating to plugin settings; changes apply to all staff immediately
 - Setup Guide page: a 5-step admin onboarding guide (`help.php`) is now accessible from the tab bar; covers running the cache task, reviewing settings, configuring risk rules, customising message templates, and starting interventions
