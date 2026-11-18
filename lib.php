@@ -57,6 +57,7 @@ function local_courseinsights_output_fragment_dashboard(array $args): string {
     global $OUTPUT;
 
     require_capability('local/courseinsights:view', \core\context\system::instance());
+    \local_courseinsights\license::require_active();
 
     $filters = [
         'cohortid'      => (int) ($args['cohortid'] ?? 0),

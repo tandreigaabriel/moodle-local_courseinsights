@@ -100,12 +100,10 @@ if (!empty($atrisk)) {
             $student['createintervention_url'] = (new moodle_url(
                 '/local/courseinsights/interventions.php',
                 [
-                    'action'    => 'create',
                     'userid'    => $student['userid'],
                     'courseid'  => $student['courseid'],
                     'riskscore' => $sd['score'],
                     'risklevel' => $sd['risklevel'],
-                    'sesskey'   => sesskey(),
                 ]
             ))->out(false);
         } else {
@@ -143,6 +141,7 @@ $templatecontext = array_merge($kpis, [
     'monthly_col_events'            => get_string('monthly_col_events', 'local_courseinsights'),
     // At-risk students.
     'atrisk_students'               => $atrisk,
+    'intervention_sesskey'          => sesskey(),
     'has_atrisk'                    => !empty($atrisk),
     'atrisk_heading'                => get_string('atrisk_heading', 'local_courseinsights'),
     'atrisk_days'                   => $atriskdays,

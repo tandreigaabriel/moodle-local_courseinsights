@@ -296,6 +296,18 @@ class report_service {
     }
 
     /**
+     * Protect every textual cell in a CSV row while preserving numeric values.
+     *
+     * @param array $row CSV values.
+     * @return array Protected CSV values.
+     */
+    public static function csv_safe_row(array $row): array {
+        return array_map(static function ($value) {
+            return is_string($value) ? self::csv_safe_value($value) : $value;
+        }, $row);
+    }
+
+    /**
      * Builds the course activity overview report, applying the given filters.
      *
      * @param array $filters Filters as returned by get_filters_from_request().
