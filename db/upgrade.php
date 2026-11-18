@@ -257,6 +257,21 @@ function xmldb_local_courseinsights_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026071502, 'local', 'courseinsights');
     }
 
+    if ($oldversion < 2026071902) {
+        // Create log_rollup table for incremental pre-aggregated daily event counts per course.
+        $table = new xmldb_table('local_courseinsights_log_rollup');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
+        $table->add_field('logdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
+        $table->add_field('event_count', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('coursedate', XMLDB_INDEX_UNIQUE, ['courseid', 'logdate']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026071902, 'local', 'courseinsights');
+    }
+
     if ($oldversion < 2026071903) {
         // Seed default risk rules on sites that did a fresh install (which skips
         // upgrade steps) and therefore never got the seeding from step 2026071500.
@@ -277,21 +292,6 @@ function xmldb_local_courseinsights_upgrade(int $oldversion): bool {
             }
         }
         upgrade_plugin_savepoint(true, 2026071903, 'local', 'courseinsights');
-    }
-
-    if ($oldversion < 2026071902) {
-        // Create log_rollup table for incremental pre-aggregated daily event counts per course.
-        $table = new xmldb_table('local_courseinsights_log_rollup');
-        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
-        $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
-        $table->add_field('logdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
-        $table->add_field('event_count', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, '0');
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
-        $table->add_index('coursedate', XMLDB_INDEX_UNIQUE, ['courseid', 'logdate']);
-        if (!$dbman->table_exists($table)) {
-            $dbman->create_table($table);
-        }
-        upgrade_plugin_savepoint(true, 2026071902, 'local', 'courseinsights');
     }
 
     if ($oldversion < 2026071905) {
