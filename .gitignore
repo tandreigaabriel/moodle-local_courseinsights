@@ -1,5 +1,4 @@
 # Private local development files. Never ship license bypasses, local patches
-/tests
 
 .env
 .env.*

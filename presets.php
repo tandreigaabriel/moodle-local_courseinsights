@@ -28,6 +28,10 @@ $context = \core\context\system::instance();
 $PAGE->set_context($context);
 require_login();
 require_capability('local/courseinsights:view', $context);
+$submitted = data_submitted();
+if (!$submitted || empty($submitted->action) || !confirm_sesskey($submitted->sesskey ?? '')) {
+    throw new \moodle_exception('invalidsesskey');
+}
 require_sesskey();
 
 $action = required_param('action', PARAM_ALPHA);

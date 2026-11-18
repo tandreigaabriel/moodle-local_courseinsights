@@ -197,6 +197,8 @@ Example: if the threshold is 14 days and a reminder is sent today, the same stud
 
 ## Capabilities
 
+Capabilities must be granted at site level. Per-course access is not supported.
+
 | Capability | Default roles | Description |
 |---|---|---|
 | `local/courseinsights:view` | Manager, Editing teacher | View the dashboard and course detail pages |
@@ -295,6 +297,11 @@ GNU General Public License v3 or later — see [LICENSE](LICENSE) or [gnu.org/li
 ---
 
 ## Changelog
+
+### 1.0.1
+- Handle clean installation before the standard log table exists.
+- Enforce licence checks for external services and dashboard fragments.
+- Protect teacher names in CSV exports.
 
 ### 1.0.0
 - Version milestone: first stable 1.0 release after 65 iterations of development, testing, and refinement

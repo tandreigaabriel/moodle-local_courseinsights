@@ -95,6 +95,7 @@ class provider implements
                 'userid'      => 'privacy:metadata:interventions:userid',
                 'courseid'    => 'privacy:metadata:interventions:courseid',
                 'createdby'   => 'privacy:metadata:interventions:createdby',
+                'assignedto'  => 'privacy:metadata:interventions:assignedto',
                 'title'       => 'privacy:metadata:interventions:title',
                 'status'      => 'privacy:metadata:interventions:status',
                 'riskscore'   => 'privacy:metadata:interventions:riskscore',
@@ -163,12 +164,20 @@ class provider implements
                FROM {context} ctx
                JOIN {local_courseinsights_interventions} ci ON ci.courseid = ctx.instanceid
               WHERE ctx.contextlevel = :contextlevel
-                AND (ci.userid = :userid OR ci.createdby = :createdby)",
+                AND (ci.userid = :userid OR ci.createdby = :createdby OR ci.assignedto = :assignedto)",
             [
                 'contextlevel' => CONTEXT_COURSE,
                 'userid'       => $userid,
                 'createdby'    => $userid,
+                'assignedto'   => $userid,
             ]
+        );
+        $contextlist->add_from_sql(
+            "SELECT ctx.id FROM {context} ctx
+               JOIN {local_courseinsights_interventions} ci ON ci.courseid = ctx.instanceid
+               JOIN {local_courseinsights_intervention_notes} n ON n.interventionid = ci.id
+              WHERE ctx.contextlevel = :contextlevel AND n.userid = :userid",
+            ['contextlevel' => CONTEXT_COURSE, 'userid' => $userid]
         );
         $contextlist->add_from_sql(
             "SELECT ctx.id
@@ -235,10 +244,6 @@ class provider implements
                 'threshold ASC'
             );
 
-            if (empty($atriskrecords)) {
-                continue;
-            }
-
             $atriskdata = [];
             foreach ($atriskrecords as $record) {
                 $atriskdata[] = (object) [
@@ -252,10 +257,12 @@ class provider implements
                 ];
             }
 
-            writer::with_context($context)->export_data(
-                [get_string('privacy:atrisk', 'local_courseinsights')],
-                (object) ['atrisk' => $atriskdata]
-            );
+            if ($atriskdata) {
+                writer::with_context($context)->export_data(
+                    [get_string('privacy:atrisk', 'local_courseinsights')],
+                    (object) ['atrisk' => $atriskdata]
+                );
+            }
 
             $summary = $DB->get_record(
                 'local_courseinsights_summary',
@@ -263,7 +270,13 @@ class provider implements
                 'teachers',
                 IGNORE_MISSING
             );
-            if ($summary && !empty($summary->teachers)) {
+            $isteacher = $DB->record_exists_sql(
+                "SELECT 1 FROM {role_assignments} ra
+                   JOIN {role} r ON r.id = ra.roleid
+                  WHERE ra.userid = :userid AND ra.contextid = :ctxid AND r.archetype = 'editingteacher'",
+                ['userid' => $userid, 'ctxid' => $context->id]
+            );
+            if ($summary && !empty($summary->teachers) && $isteacher) {
                 writer::with_context($context)->export_data(
                     [get_string('privacy:summary', 'local_courseinsights')],
                     (object) ['teachers' => $summary->teachers]
@@ -296,9 +309,10 @@ class provider implements
             }
 
             // Export interventions where this user is the student.
-            $interventions = $DB->get_records(
+            $interventions = $DB->get_records_select(
                 'local_courseinsights_interventions',
-                ['userid' => $userid, 'courseid' => $context->instanceid]
+                'courseid = :courseid AND (userid = :userid OR createdby = :createdby OR assignedto = :assignedto)',
+                ['courseid' => $context->instanceid, 'userid' => $userid, 'createdby' => $userid, 'assignedto' => $userid]
             );
             if (!empty($interventions)) {
                 $intdata = [];
@@ -306,6 +320,8 @@ class provider implements
                     $intdata[] = (object) [
                         'title'        => $record->title,
                         'status'       => $record->status,
+                        'createdby'    => (int) $record->createdby,
+                        'assignedto'   => $record->assignedto === null ? null : (int) $record->assignedto,
                         'riskscore'    => $record->riskscore,
                         'timecreated'  => userdate((int) $record->timecreated),
                     ];
@@ -320,8 +336,11 @@ class provider implements
             $notessql = "SELECT n.id, n.note, n.isprivate, n.timecreated
                            FROM {local_courseinsights_intervention_notes} n
                            JOIN {local_courseinsights_interventions} ci ON ci.id = n.interventionid
-                          WHERE n.userid = :userid AND ci.courseid = :courseid";
-            $authornotes = $DB->get_records_sql($notessql, ['userid' => $userid, 'courseid' => $context->instanceid]);
+                          WHERE (n.userid = :userid OR ci.userid = :studentid) AND ci.courseid = :courseid";
+            $authornotes = $DB->get_records_sql(
+                $notessql,
+                ['userid' => $userid, 'studentid' => $userid, 'courseid' => $context->instanceid]
+            );
             if (!empty($authornotes)) {
                 $notedata = [];
                 foreach ($authornotes as $record) {
@@ -432,6 +451,20 @@ class provider implements
                         $allinparams
                     );
                 }
+                $DB->set_field_select(
+                    'local_courseinsights_interventions',
+                    'createdby',
+                    0,
+                    'courseid = :courseid AND createdby = :userid',
+                    ['courseid' => $context->instanceid, 'userid' => $userid]
+                );
+                $DB->set_field_select(
+                    'local_courseinsights_interventions',
+                    'assignedto',
+                    null,
+                    'courseid = :courseid AND assignedto = :userid',
+                    ['courseid' => $context->instanceid, 'userid' => $userid]
+                );
                 $isteacher = $DB->record_exists_sql(
                     "SELECT 1 FROM {role_assignments} ra
                        JOIN {role} r ON r.id = ra.roleid
@@ -491,6 +524,19 @@ class provider implements
             "SELECT createdby AS userid
                FROM {local_courseinsights_interventions}
               WHERE courseid = :courseid",
+            ['courseid' => $context->instanceid]
+        );
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT assignedto AS userid FROM {local_courseinsights_interventions}
+              WHERE courseid = :courseid AND assignedto IS NOT NULL",
+            ['courseid' => $context->instanceid]
+        );
+        $userlist->add_from_sql(
+            'userid',
+            "SELECT n.userid FROM {local_courseinsights_intervention_notes} n
+               JOIN {local_courseinsights_interventions} ci ON ci.id = n.interventionid
+              WHERE ci.courseid = :courseid",
             ['courseid' => $context->instanceid]
         );
         $userlist->add_from_sql(
@@ -570,6 +616,21 @@ class provider implements
                 array_merge($aidparams, $uidparams)
             );
         }
+
+        $DB->set_field_select(
+            'local_courseinsights_interventions',
+            'createdby',
+            0,
+            "courseid = :courseid AND createdby {$insql}",
+            $params
+        );
+        $DB->set_field_select(
+            'local_courseinsights_interventions',
+            'assignedto',
+            null,
+            "courseid = :courseid AND assignedto {$insql}",
+            $params
+        );
 
         [$teacherinsql, $teacherparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'tuid');
         $teacherparams['tctxid'] = $context->id;

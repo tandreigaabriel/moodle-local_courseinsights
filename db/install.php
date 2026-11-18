@@ -35,11 +35,11 @@ function xmldb_local_courseinsights_install(): void {
     $dbman = $DB->get_manager();
     $table = new xmldb_table('logstore_standard_log');
     $index = new xmldb_index('logsstanlog_coutim_ix', XMLDB_INDEX_NOTUNIQUE, ['courseid', 'timecreated']);
-    if (!$dbman->index_exists($table, $index)) {
+    if ($dbman->table_exists($table) && !$dbman->index_exists($table, $index)) {
         $dbman->add_index($table, $index);
     }
     $index = new xmldb_index('logsstanlog_tim_ix', XMLDB_INDEX_NOTUNIQUE, ['timecreated']);
-    if (!$dbman->index_exists($table, $index)) {
+    if ($dbman->table_exists($table) && !$dbman->index_exists($table, $index)) {
         $dbman->add_index($table, $index);
     }
 

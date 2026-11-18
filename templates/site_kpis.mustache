@@ -226,7 +226,11 @@
                     {{#has_createintervention}}
                     <td class="ci-top10-value">
                         {{#createintervention_url}}
-                        <a href="{{createintervention_url}}" class="ci-intervene-btn">{{../atrisk_intervention_label}}</a>
+                        <form method="post" action="{{createintervention_url}}">
+                            <input type="hidden" name="action" value="create">
+                            <input type="hidden" name="sesskey" value="{{../intervention_sesskey}}">
+                            <button type="submit" class="ci-intervene-btn">{{../atrisk_intervention_label}}</button>
+                        </form>
                         {{/createintervention_url}}
                     </td>
                     {{/has_createintervention}}

@@ -58,6 +58,12 @@ $PAGE->set_heading(get_string('intervention_detail_heading', 'local_courseinsigh
 $PAGE->set_pagelayout('report');
 
 $action = optional_param('action', '', PARAM_ALPHA);
+if (in_array($action, ['update', 'addnote', 'sendmessage'], true)) {
+    $submitted = data_submitted();
+    if (!$submitted || ($submitted->action ?? '') !== $action || !confirm_sesskey($submitted->sesskey ?? '')) {
+        throw new \moodle_exception('invalidsesskey');
+    }
+}
 
 // Handle status/assignment update.
 if ($action === 'update') {

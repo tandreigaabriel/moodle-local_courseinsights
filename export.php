@@ -101,10 +101,10 @@ $header = [get_string('course', 'local_courseinsights')];
 foreach ($columns as $column) {
     $header[] = get_string($column, 'local_courseinsights');
 }
-$csv->add_data($header);
+$csv->add_data(\local_courseinsights\report_service::csv_safe_row($header));
 
 foreach ($records as $record) {
-    $row = [\local_courseinsights\report_service::csv_safe_value(format_string($record->fullname))];
+    $row = [format_string($record->fullname)];
 
     foreach ($columns as $column) {
         $value = \local_courseinsights\report_service::get_column_value($column, $record);
@@ -122,7 +122,7 @@ foreach ($records as $record) {
         }
     }
 
-    $csv->add_data($row);
+    $csv->add_data(\local_courseinsights\report_service::csv_safe_row($row));
 }
 
 $csv->download_file();
