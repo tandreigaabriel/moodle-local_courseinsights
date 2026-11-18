@@ -17,7 +17,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:10.6
+        image: mariadb:10.11
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: "true"
           MYSQL_CHARACTER_SET_SERVER: "utf8mb4"
@@ -41,6 +41,11 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: mysqli, pdo, mbstring, curl, xml, zip, intl
+          ini-values: max_input_vars=5000
+          coverage: none
+
+      - name: Install locale required by Moodle PHPUnit
+        run: sudo locale-gen en_AU.UTF-8
 
       - name: Install moodle-plugin-ci
         run: |
@@ -71,3 +76,9 @@ jobs:
 
       - name: Mustache Lint
         run: moodle-plugin-ci mustache moodle/local/courseinsights
+
+      - name: Upgrade savepoints
+        run: moodle-plugin-ci savepoints ./plugin
+
+      - name: PHPUnit tests
+        run: moodle-plugin-ci phpunit ./plugin --fail-on-warning
