@@ -59,6 +59,7 @@ class search_users extends external_api {
         $context = \core\context\system::instance();
         self::validate_context($context);
         require_capability('local/courseinsights:view', $context);
+        \local_courseinsights\license::require_active();
 
         $query = trim($query);
         if (strlen($query) < 2) {

@@ -102,6 +102,7 @@ class get_courses extends external_api {
         $context = \core\context\system::instance();
         self::validate_context($context);
         require_capability('local/courseinsights:view', $context);
+        \local_courseinsights\license::require_active();
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'categoryid'    => $categoryid,

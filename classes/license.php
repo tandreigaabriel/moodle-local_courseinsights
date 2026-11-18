@@ -91,6 +91,18 @@ class license {
     }
 
     /**
+     * Reject access when no valid or grace-period licence is available.
+     *
+     * @return void
+     */
+    public static function require_active(): void {
+        $status = self::get_status();
+        if ($status === self::STATUS_EXPIRED || $status === self::STATUS_UNLICENSED) {
+            throw new \moodle_exception('license_required', 'local_courseinsights');
+        }
+    }
+
+    /**
      * Return the stored token object, or null if none.
      *
      * @return object|null

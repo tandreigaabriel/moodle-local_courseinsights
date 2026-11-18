@@ -337,6 +337,7 @@ $string['privacy:metadata:intervention_notes:note'] = 'The text content of the n
 $string['privacy:metadata:intervention_notes:timecreated'] = 'When the note was written.';
 $string['privacy:metadata:intervention_notes:userid'] = 'The staff member who wrote the note.';
 $string['privacy:metadata:interventions'] = 'Course Insights stores intervention cases created by staff for at-risk students.';
+$string['privacy:metadata:interventions:assignedto'] = 'The staff member assigned to this case.';
 $string['privacy:metadata:interventions:courseid'] = 'The course this intervention relates to.';
 $string['privacy:metadata:interventions:createdby'] = 'The staff member who created this case.';
 $string['privacy:metadata:interventions:riskscore'] = 'The risk score at the time of case creation.';

@@ -54,6 +54,10 @@ $PAGE->set_pagelayout('report');
 // Handle create action (from at-risk table).
 $action = optional_param('action', '', PARAM_ALPHA);
 if ($action === 'create') {
+    $submitted = data_submitted();
+    if (!$submitted || ($submitted->action ?? '') !== 'create' || !confirm_sesskey($submitted->sesskey ?? '')) {
+        throw new \moodle_exception('invalidsesskey');
+    }
     require_sesskey();
     $userid    = required_param('userid', PARAM_INT);
     $courseid  = required_param('courseid', PARAM_INT);
