@@ -37,6 +37,10 @@ final class report_service_test extends \advanced_testcase {
 
     /**
      * Insert a course-level grade_item row and return its id.
+     *
+     * @param int $courseid Course id.
+     * @param float $grademax Maximum grade.
+     * @return int Grade item id.
      */
     private function create_course_grade_item(int $courseid, float $grademax = 100.0): int {
         global $DB;
@@ -61,6 +65,12 @@ final class report_service_test extends \advanced_testcase {
 
     /**
      * Insert a grade_grades row for a student.
+     *
+     * @param int $itemid Grade item id.
+     * @param int $userid Student id.
+     * @param float $grade Final grade.
+     * @param float $grademax Maximum grade.
+     * @return void
      */
     private function set_grade(int $itemid, int $userid, float $grade, float $grademax = 100.0): void {
         global $DB;
