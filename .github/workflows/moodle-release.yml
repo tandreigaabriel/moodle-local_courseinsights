@@ -1,0 +1,23 @@
+name: Release Plugin version to Moodle Marketplace
+
+# Pushing a tag vX.Y.Z publishes that commit as a new version in the Moodle Marketplace.
+# The plugin must already exist in the Marketplace (first version is uploaded by hand).
+# Token: repository secret MOODLE_MARKETPLACE_TOKEN (marketplace.moodle.com/account/security).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to be released (e.g. v1.0.2)'
+        required: true
+
+jobs:
+  release-to-marketplace:
+    uses: moodlehq/moodle-plugin-release/.github/workflows/moodle-release.yml@main
+    with:
+      tag: ${{ inputs.tag }}
+    secrets:
+      MOODLE_MARKETPLACE_TOKEN: ${{ secrets.MOODLE_MARKETPLACE_TOKEN }}
