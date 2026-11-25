@@ -1,7 +1,7 @@
 # Course Insights — Plugin for Moodle
 
 **Component:** `local_courseinsights`  
-**Developer:** TAG Web Design — Andrei Toma  
+Developed and maintained by Andrei Toma — TAG Digital Solutions Ltd (trading as TAG Web Design & Development), https://tandreig.com. © 2026 TAG Digital Solutions Ltd.
 **License:** GNU GPL v3 or later  
 **Requires:** Moodle 4.5+ and PHP 8.1+  
 
@@ -102,7 +102,7 @@ Access can be managed through Moodle's standard role and capability system.
 
 ## Support
 
-Developed and maintained by **TAG Web Design — Andrei Toma**.
+Developed and maintained by Andrei Toma — TAG Digital Solutions Ltd (trading as TAG Web Design & Development), https://tandreig.com. © 2026 TAG Digital Solutions Ltd.
 
 For support, bug reports, and feature requests, use the plugin repository issue tracker.
 

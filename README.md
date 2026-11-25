@@ -286,7 +286,7 @@ The plugin has been adjusted for Moodle review feedback:
 - **Plugin support form:** [tandreig.com/plugins/support](https://tandreig.com/plugins/support)
 - **Licence key delivery form:** [tandreig.com/request-key](https://tandreig.com/request-key) — use this only after a Moodle Marketplace purchase so the purchase can be verified and matched to the Moodle site URL
 - **Bug reports & feature requests:** [github.com/tandreigaabriel/moodle-local_courseinsights/issues](https://github.com/tandreigaabriel/moodle-local_courseinsights/issues)
-- **Developed and maintained by:** TAG Web Design — Andrei Toma
+Developed and maintained by Andrei Toma — TAG Digital Solutions Ltd (trading as TAG Web Design & Development), https://tandreig.com. © 2026 TAG Digital Solutions Ltd.
 
 ---
 
